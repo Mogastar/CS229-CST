@@ -29,6 +29,12 @@ def load_data(dir):
     
     return (answers, questions, tags)
 
+def add_norm_score(answers, questions):
+    '''Add a variable for the normalized score.'''
+    
+    norm_score = [float(score) / questions.Id[]
+    
+
 
 def main():
     '''Do all of our shit.'''
@@ -41,5 +47,5 @@ def main():
     
     
     
-if (__name__ == '__main__'):
-    main()
+#if (__name__ == '__main__'):
+main()
