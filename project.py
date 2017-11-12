@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 # Define directories
 pydir = os.path.join(os.getcwd(), 'Datasets/pythonquestions/')
-rdir = os.path.join(os.getcwd(), 'Datasets/pythonquestions/')
+rdir = os.path.join(os.getcwd(), 'Datasets/rquestions/')
 
 
 def load_data(dir):
