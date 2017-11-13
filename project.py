@@ -1,3 +1,4 @@
+import nltk
 import numpy as np
 import os
 import pandas as pd
@@ -7,8 +8,10 @@ import re
 
 
 # Define directories
-pydir = os.path.join(os.getcwd(), 'Datasets/pythonquestions/')
-rdir = os.path.join(os.getcwd(), 'Datasets/rquestions/')
+py_dir = os.path.join(os.getcwd(), 'Datasets/pythonquestions/')
+r_dir = os.path.join(os.getcwd(), 'Datasets/rquestions/')
+# Define a stemmer
+stemmer = nltk.SnowballStemmer('english')
 
 
 def load_data(dir):
@@ -38,6 +41,7 @@ def load_data(dir):
     df.reset_index(inplace = True)
     df.rename(columns = {'index': 'Id_questions'}, inplace = True)
     
+    print ("Loaded data")
     return (df, tags)
 
 
@@ -46,24 +50,32 @@ def process_data(df):
     
     # DeltaT between question and answer dates
     df['DeltaT'] = df['CreationDate_answers'] - df['CreationDate_questions']
+    
     # Length of the answer and question bodies
     df['Bodylength_answers'] = [len(body) for body in df['Body_answers']]
     df['Bodylength_questions'] = [len(body) for body in df['Body_questions']]
     df['Bodylenth_std'] = df['Bodylength_answers'] / df['Bodylength_questions']
+    
     # Number of href links
     df['LinksNumber'] = df['Body_answers'].apply(lambda s: s.count('href'))
+    
     # Standardized scores
     df['Score_std'] = [float(df['Score_answers'].iloc[i]) / max(1.0, 
                       df['Score_questions'].iloc[i]) for i in range(len(df))]
 
+    print ("Processed data")
 
 def get_voc(df):
-    '''Get our vocabulary.'''
+    '''Get vocabulary from the bodies of answers.'''
     
     voc = set()
     for i in range(len(df)):
-        voc.add(set([word.lower() for word in re.findall(r"\w+|[^\w\s]", 
-                     df['Body_answers'].iloc[i], re.UNICODE)]))
+        voc = voc.union(set([stemmer.stem(word) for word in re.findall(r"\w+|[^\w\s]", 
+                             df['Body_answers'].iloc[i])]))
+        if (i % 10000):
+            print ("Done {0}/{1}".format(i+1, len(df)))
+    
+    print ("Got vocabulary")
     return voc
         
 
@@ -77,9 +89,16 @@ def NLP_for_answer(answer, tags):
 #   '''Do all of our shit.'''
 
 # Load data
-df, tags = load_data(pydir)
+df, tags = load_data(r_dir)
 # Process data
 process_data(df)
+# Get and write vocabulary
+voc = get_voc(df)
+with open(os.path.join(r_dir, 'Vocabulary.txt'), 'w') as vocf:
+    for word in voc:
+        vocf.write("%s \n" % word)
+# Do other shit
+
 
 
     
