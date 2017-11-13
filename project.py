@@ -38,11 +38,11 @@ def find_norm_score(answers_row, questions):
     return norm_score
 
 
-def main():
-    '''Do all of our shit.'''
+#def main():
+#   '''Do all of our shit.'''
 
-    # Load data
-    answers, questions, tags = load_data(rdir)
+# Load data
+answers, questions, tags = load_data(rdir)
     
     
     
@@ -51,4 +51,4 @@ def main():
     
     
 #if (__name__ == '__main__'):
-main()
+#    main()
