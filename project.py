@@ -56,8 +56,7 @@ def process_data(df):
     df['Score_std'] = [float(df['Score_answers'].iloc[i]) / max(1.0, 
                       df['Score_questions'].iloc[i]) for i in range(len(df))]
 
-<<<<<<< HEAD
-   
+
 def get_voc(df):
     '''Get our vocabulary.'''
     
@@ -67,26 +66,21 @@ def get_voc(df):
                      df['Body_answers'].iloc[i], re.UNICODE)]))
     return voc
         
-=======
-<<<<<<< HEAD
+
 def NLP_for_answer(answer, tags):
     ''' Fuck I do not know what I am doing '''
 
-    pyanswers, 
+    pass
     
 
-# def main():
-=======
->>>>>>> 1f0b6e401492f6152b5e2e84849d035f111319b0
-    
 #def main():
->>>>>>> 1ddd45f073e8465ac7161e099633ce6e26335135
 #   '''Do all of our shit.'''
 
 # Load data
 df, tags = load_data(pydir)
 # Process data
 process_data(df)
+
 
     
     
