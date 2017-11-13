@@ -2,6 +2,7 @@ import numpy as np
 import os
 import pandas as pd
 import sklearn as sk
+import matplotlib.pyplot as plt
 
 
 # Define directories
