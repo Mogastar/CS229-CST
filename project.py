@@ -39,7 +39,13 @@ def find_norm_score(answers_row, questions):
     return norm_score
 
 
-#def main():
+def NLP_for_answer(answer, tags):
+    ''' Fuck I do not know what I am doing '''
+
+    pyanswers, 
+    
+
+# def main():
 #   '''Do all of our shit.'''
 
 # Load data
