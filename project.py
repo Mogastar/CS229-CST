@@ -3,6 +3,7 @@ import os
 import pandas as pd
 import sklearn as sk
 import matplotlib.pyplot as plt
+import re
 
 
 # Define directories
@@ -34,7 +35,8 @@ def load_data(dir):
     # Create merged dataset
     df = answers.set_index('ParentId').join(questions.set_index('Id'), 
                            lsuffix = '_answers', rsuffix = '_questions')
-    df.reset_index()
+    df.reset_index(inplace = True)
+    df.rename(columns = {'index': 'Id_questions'}, inplace = True)
     
     return (df, tags)
 
@@ -54,12 +56,22 @@ def process_data(df):
     df['Score_std'] = [float(df['Score_answers'].iloc[i]) / max(1.0, 
                       df['Score_questions'].iloc[i]) for i in range(len(df))]
 
+   
+def get_voc(df):
+    '''Get our vocabulary.'''
+    
+    voc = set()
+    for i in range(len(df)):
+        voc.add(set([word.lower() for word in re.findall(r"\w+|[^\w\s]", 
+                     df['Body_answers'].iloc[i], re.UNICODE)]))
+    return voc
+        
     
 #def main():
 #   '''Do all of our shit.'''
 
 # Load data
-df, tags = load_data(rdir)
+df, tags = load_data(pydir)
 # Process data
 process_data(df)
 
