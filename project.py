@@ -29,18 +29,22 @@ def load_data(dir):
     
     return (answers, questions, tags)
 
-def add_norm_score(answers, questions):
+
+def find_norm_score(answers_row, questions):
     '''Add a variable for the normalized score.'''
     
-    norm_score = [float(score) / questions.Id[]
+    parent_score = max(1, questions.loc[questions.Id == answers_row.ParentId, 'Score'].tolist())
+    norm_score = (answers_row.Score / max(1, 
+                 questions.iloc[questions.Id == answers_row.ParentId, 'Score']))
+    return norm_score
+
+
+#def main():
+#   '''Do all of our shit.'''
+
+# Load data
+answers, questions, tags = load_data(rdir)
     
-
-
-def main():
-    '''Do all of our shit.'''
-
-    # Load data
-    ranswers, rquestions, rtags = load_data(rdir)
     
     
     
@@ -48,4 +52,4 @@ def main():
     
     
 #if (__name__ == '__main__'):
-main()
+#    main()
