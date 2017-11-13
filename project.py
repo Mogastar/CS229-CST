@@ -6,7 +6,7 @@ import sklearn as sk
 
 # Define directories
 pydir = os.path.join(os.getcwd(), 'Datasets/pythonquestions/')
-rdir = os.path.join(os.getcwd(), 'Datasets/pythonquestions/')
+rdir = os.path.join(os.getcwd(), 'Datasets/rquestions/')
 
 
 def load_data(dir):
@@ -28,18 +28,21 @@ def load_data(dir):
     
     return (answers, questions, tags)
 
-def add_norm_score(answers, questions):
+
+def find_norm_score(answers_row, questions):
     '''Add a variable for the normalized score.'''
     
-    norm_score = [float(score) / questions.Id[]
-    
+    norm_score = (answers_row.Score /
+                 questions.loc[questions.Id == answers_row.ParentId].Score)
+    return norm_score
 
 
 def main():
     '''Do all of our shit.'''
 
     # Load data
-    ranswers, rquestions, rtags = load_data(rdir)
+    answers, questions, tags = load_data(rdir)
+    
     
     
     
