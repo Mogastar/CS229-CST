@@ -68,15 +68,15 @@ def process_data(df):
 def get_voc(df):
     '''Get vocabulary from the bodies of answers.'''
     
-    voc = set()
+    allwords = []
     for i in range(len(df)):
-        voc = voc.union(set([stemmer.stem(word) for word in re.findall(r"\w+|[^\w\s]", 
-                             df['Body_answers'].iloc[i])]))
-        if (i % 10000):
+        allwords += [stemmer.stem(word) for word in re.findall(r"\w+|[^\w\s]", 
+                             df['Body_answers'].iloc[i])]
+        if (i % 10000 == 0):
             print ("Done {0}/{1}".format(i+1, len(df)))
     
     print ("Got vocabulary")
-    return voc
+    return set(allwords)
         
 
 def NLP_for_answer(answer, tags):
@@ -89,14 +89,15 @@ def NLP_for_answer(answer, tags):
 #   '''Do all of our shit.'''
 
 # Load data
-df, tags = load_data(r_dir)
+work_dir = r_dir
+df, tags = load_data(work_dir)
 # Process data
 process_data(df)
-# Get and write vocabulary
-voc = get_voc(df)
-with open(os.path.join(r_dir, 'Vocabulary.txt'), 'w') as vocf:
-    for word in voc:
-        vocf.write("%s \n" % word)
+# Get and write vocabulary / read
+#voc = get_voc(df)
+#with open(os.path.join(work_dir, 'Vocabulary.txt'), 'w') as vocf:
+#    for word in voc:
+#        vocf.write("%s \n" % word)
 # Do other shit
 
 
