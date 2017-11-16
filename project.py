@@ -1,3 +1,4 @@
+import locale
 import nltk
 import numpy as np
 import os
@@ -6,6 +7,7 @@ import sklearn as sk
 import matplotlib.pyplot as plt
 import re
 
+locale.setlocale(locale.LC_ALL, "English")
 
 # Define directories
 py_dir = os.path.join(os.getcwd(), 'Datasets/pythonquestions/')
@@ -65,18 +67,50 @@ def process_data(df):
 
     print ("Processed data")
 
-def get_voc(df):
-    '''Get vocabulary from the bodies of answers.'''
+
+def get_voc(df, vocfile):
+    '''Get vocabulary from the bodies of answers and write to file.'''
     
+    # Get vocabulary
     allwords = []
     for i in range(len(df)):
         allwords += [stemmer.stem(word) for word in re.findall(r"\w+|[^\w\s]", 
                              df['Body_answers'].iloc[i])]
         if (i % 10000 == 0):
             print ("Done {0}/{1}".format(i+1, len(df)))
+    voc = set(allwords)
+            
+    # Write to file
+    with open(vocfile, 'w') as vocf:
+        for word in voc:
+            vocf.write("%s \n" % word)
     
     print ("Got vocabulary")
-    return set(allwords)
+    return voc
+
+
+def process_voc(vocfile_raw, vocfile_proc = None, process = False):
+    '''Read, remove some words from the vocabulary and write it.'''
+    
+    # Read and vocabulary
+    with open(vocfile_raw, 'r') as vocf:
+        voc_raw = [line.rstrip() for line in vocf]
+    if vocfile_proc == None:
+        vocfile_proc = vocfile_raw
+    
+    # Process and write
+    voc_raw.sort(cmp = locale.strcoll)
+    voc_proc = []
+    with open(vocfile_proc, 'w') as vocf:
+        for word in voc_raw:
+            # Remove numbers
+            if (word.isdigit()):
+                continue
+            voc_proc.append(word)
+            vocf.write("%s \n" % word)
+
+    print ("Processed vocabulary")
+    return voc_proc
         
 
 def NLP_for_answer(answer, tags):
@@ -88,22 +122,17 @@ def NLP_for_answer(answer, tags):
 #def main():
 #   '''Do all of our shit.'''
 
+# Choose dataset
+work_dir = py_dir
 # Load data
-work_dir = r_dir
 df, tags = load_data(work_dir)
 # Process data
 process_data(df)
-# Get and write vocabulary / read
-#voc = get_voc(df)
-#with open(os.path.join(work_dir, 'Vocabulary.txt'), 'w') as vocf:
-#    for word in voc:
-#        vocf.write("%s \n" % word)
-# Do other shit
-
-
-
-    
-    
+# Get vocabulary (first time)
+#voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
+# Read dictionary (other times)
+voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), process = True)
+  
     
     
     
