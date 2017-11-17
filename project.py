@@ -10,6 +10,7 @@ import re
 locale.setlocale(locale.LC_ALL, "English")
 
 # Define directories
+data_dir = os.path.join(os.getcwd(), 'Datasets/')
 py_dir = os.path.join(os.getcwd(), 'Datasets/pythonquestions/')
 r_dir = os.path.join(os.getcwd(), 'Datasets/rquestions/')
 # Define a stemmer
@@ -89,24 +90,40 @@ def get_voc(df, vocfile):
     return voc
 
 
-def process_voc(vocfile_raw, vocfile_proc = None, process = False):
+def process_voc(vocfile, word_files = [], process = False):
     '''Read, remove some words from the vocabulary and write it.'''
     
-    # Read and vocabulary
-    with open(vocfile_raw, 'r') as vocf:
+    # Read and sort vocabulary
+    with open(vocfile, 'r') as vocf:
         voc_raw = [line.rstrip() for line in vocf]
-    if vocfile_proc == None:
-        vocfile_proc = vocfile_raw
+    voc_raw.sort(cmp = locale.strcoll)
+    
+    # Return if not processing
+    if  not process:
+        print ("Read vocabulary")
+        return voc_raw
     
     # Process and write
-    voc_raw.sort(cmp = locale.strcoll)
     voc_proc = []
-    with open(vocfile_proc, 'w') as vocf:
-        for word in voc_raw:
-            # Remove numbers
-            if (word.isdigit()):
-                continue
-            voc_proc.append(word)
+    for word in voc_raw:
+        # Remove numbers
+        if (word.isdigit()):
+            continue
+        # Add other things to check for
+        if False:
+            pass
+        voc_proc.append(word)
+        
+    # Add words from files, such as HTML tags
+    for word_file in word_files:
+        with open(word_file, 'r') as wf:
+            words = [line.rstrip() for line in wf]
+        voc_proc += words
+            
+    # Write to file
+    voc_proc.sort(cmp = locale.strcoll)
+    with open(vocfile, 'w') as vocf:
+        for word in voc_proc:
             vocf.write("%s \n" % word)
 
     print ("Processed vocabulary")
@@ -123,7 +140,7 @@ def NLP_for_answer(answer, tags):
 #   '''Do all of our shit.'''
 
 # Choose dataset
-work_dir = py_dir
+work_dir = r_dir
 # Load data
 df, tags = load_data(work_dir)
 # Process data
@@ -131,7 +148,9 @@ process_data(df)
 # Get vocabulary (first time)
 #voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
 # Read dictionary (other times)
-voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), process = True)
+voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
+                  [os.path.join(data_dir, 'HTML_tags.txt')],
+                  process = True)
   
     
     
