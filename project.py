@@ -7,12 +7,8 @@ import sklearn as sk
 import matplotlib.pyplot as plt
 import re
 
-<<<<<<< HEAD
+
 locale.setlocale(locale.LC_ALL, '')
-=======
-# MACOSX
-locale.setlocale(locale.LC_ALL, "")
->>>>>>> 20498677a2d79d23257c7dddde90464ab9a234bf
 
 # Define directories
 data_dir = os.path.join(os.getcwd(), 'Datasets/')
