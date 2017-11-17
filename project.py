@@ -8,9 +8,7 @@ import matplotlib.pyplot as plt
 import re
 
 # MACOSX
-#locale.setlocale(locale.LC_ALL, "en_US.UTF-8")
-# Windows
-locale.setlocale(locale.LC_ALL, "English")
+locale.setlocale(locale.LC_ALL, "")
 
 # Define directories
 data_dir = os.path.join(os.getcwd(), 'Datasets/')
