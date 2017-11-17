@@ -107,12 +107,17 @@ def process_voc(vocfile, word_files = [], process = False):
     # Process and write
     voc_proc = []
     for word in voc_raw:
+        # Remove one character words
+        if len(word) <= 1:
+            continue
         # Remove numbers
         if (word.isdigit()):
             continue
-        # Add other things to check for
-        if False:
-            pass
+        # Remove words with at least 2 digits
+        digit_count = sum(c.isdigit() for c in word)
+        if digit_count > 2:
+            continue
+        # Add word to processed vocabulary otherwise
         voc_proc.append(word)
         
     # Add words from files, such as HTML tags
@@ -122,6 +127,7 @@ def process_voc(vocfile, word_files = [], process = False):
         voc_proc += words
             
     # Write to file
+    voc_proc = list(set(voc_proc))
     voc_proc.sort(cmp = locale.strcoll)
     with open(vocfile, 'w') as vocf:
         for word in voc_proc:
