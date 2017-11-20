@@ -65,7 +65,7 @@ def process_data(df):
     df['LinksNumber'] = df['Body_answers'].apply(lambda s: s.count('href'))
     
     # Number of code parts
-    df['CodeNumber'] = df['Body_answers'].apply(lambda s: s.count('code'))
+    df['CodeNumber'] = df['Body_answers'].apply(lambda s: s.count('<code>'))
     
     # Standardized scores
     df['Score_std'] = [float(df['Score_answers'].iloc[i]) / max(1.0, 
@@ -216,18 +216,18 @@ plt.legend()
 plt.show()
 
 # Train logistic regression of IsAcceptedAnswer over Score_std
-X_train = df_train.Score_Std
+X_train = df_train.Score_std
 y_train = df_train.IsAcceptedAnswer
 lgm = sk.linear_model.LogisticRegression()
 lgm.fit(X_train.reshape(-1, 1), y_train)
 # Test it
-X_test = df_test.Score_Std
+X_test = df_test.Score_std
 y_test = df_test.IsAcceptedAnswer
-y_pred = lgm.predict(X_test)
+y_pred = lgm.predict(X_test.reshape(-1, 1))
 # Plot
-plt.scatter(X_test[y_test == True], y_test[y_test == True].CodeNumber, 
-            color = 'blue', marker = '+', label = 'Accepted answers')
-plt.scatter(X_test[y_test == False].LinksNumber, X_test[y_test == False].CodeNumber, 
+plt.scatter(X_test[y_test == True], y_test[y_test == True], 
+            color = 'blue', label = 'Accepted answers')
+plt.scatter(X_test[y_test == False], y_test[y_test == False], 
             color = 'red', label = 'Accepted answers')
 # Plot boundary line
 coef = lgm.coef_[0]
@@ -252,7 +252,7 @@ y_test = df_test.IsAcceptedAnswer
 y_pred = lgm.predict(X_test)
 # Plot
 plt.scatter(X_test[y_test == True].LinksNumber, X_test[y_test == True].CodeNumber, 
-            color = 'blue', marker = '+', label = 'Accepted answers')
+            color = 'blue', label = 'Accepted answers')
 plt.scatter(X_test[y_test == False].LinksNumber, X_test[y_test == False].CodeNumber, 
             color = 'red', label = 'Accepted answers')
 # Plot boundary line
