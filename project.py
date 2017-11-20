@@ -130,7 +130,9 @@ def process_voc(vocfile, word_files = [], process = False):
     print ("Processed vocabulary")
     return voc_proc
         
-
+#def Occurances_of_words(df, voc):
+#    print (df['Body_answers'].value_counts())
+    
 def NLP_for_answer(answer, tags):
     ''' Fuck I do not know what I am doing '''
 
@@ -151,12 +153,10 @@ process_data(df)
 # Read dictionary (other times)
 voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
                   [os.path.join(data_dir, 'HTML_tags.txt')],
-                  process = True)
-  
+                  process = True)   
     
-    
-    
-    
+#Occurances_of_words(df, voc, os.path.join(word_dir, 'Counting.txt'))
+#Occurances_of_words(df, voc)
     
 #if (__name__ == '__main__'):
 #    main()
