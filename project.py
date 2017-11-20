@@ -163,15 +163,8 @@ process_data(df)
 # Read dictionary (other times)
 voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
                   [os.path.join(data_dir, 'HTML_tags.txt')],
-<<<<<<< HEAD
                   process = True)   
-    
-#Occurances_of_words(df, voc, os.path.join(word_dir, 'Counting.txt'))
-#Occurances_of_words(df, voc)
-    
-=======
-                  process = True)
-  
+      
 # Separate sets
 df_train, df_test = sk.model_selection.train_test_split(df, test_size = 0.01, 
                                                         random_state = 0)
@@ -228,27 +221,22 @@ plt.show()
 X_train = df_train.Score_std
 y_train = df_train.IsAcceptedAnswer
 lgm = sk.linear_model.LogisticRegression()
-lgm.fit(X_train.reshape(-1, 1), y_train)
+lgm.fit(X_train.values.reshape(-1, 1), y_train)
 # Test it
 X_test = df_test.Score_std
 y_test = df_test.IsAcceptedAnswer
-y_pred = lgm.predict(X_test.reshape(-1, 1))
+y_pred = lgm.predict(X_test.values.reshape(-1, 1))
 # Plot
-plt.scatter(X_test[y_test == True], y_test[y_test == True], 
-            color = 'blue', label = 'Accepted answers')
-plt.scatter(X_test[y_test == False], y_test[y_test == False], 
-            color = 'red', label = 'Accepted answers')
+plt.scatter(X_test, y_test, color = 'blue')
 # Plot boundary line
-coef = lgm.coef_[0]
-xx = np.linspace(0, 8)
-yy = -coef[0] / coef[1] * xx - (lgm.intercept_[0]) / coef[1]
-plt.plot(xx, yy, color = 'black', label = 'Boundary line')
-plt.xlabel('Number of links')
-plt.ylabel('Number of code blocks')
+xx = np.linspace(-4, 12)
+yy = 1 / (1 + np.exp(-(xx * lgm.coef_ + lgm.intercept_))).ravel()
+plt.plot(xx, yy, color = 'black', label = 'Logistic Regression')
+plt.xlabel('Standardized score')
+plt.ylabel('Category of answer (1 is accepted)')
 plt.legend()
-plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_(LinksNumber+CodeNumber).png'), dpi = 1200)
+plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_Score.png'), dpi = 1200)
 plt.show()
-
 
 # Train logistic regression of IsAcceptedAnswer over LinksNumber
 X_train = df_train[['LinksNumber', 'CodeNumber']]
@@ -276,6 +264,5 @@ plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_(LinksNumber+CodeNumber).p
 plt.show()
 
    
->>>>>>> 32e0d2455f6bd6dcbd409b97bbda6768d779f1a0
 #if (__name__ == '__main__'):
 #    main()
