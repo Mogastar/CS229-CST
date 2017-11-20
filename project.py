@@ -19,6 +19,13 @@ r_dir = os.path.join(os.getcwd(), 'Datasets/rquestions/')
 stemmer = nltk.SnowballStemmer('english')
 
 
+'''
+###############################################################################
+Functions
+###############################################################################
+'''
+
+
 def load_data(dir):
     '''Load the data.'''
     
@@ -140,17 +147,13 @@ def process_voc(vocfile, word_files = [], process = False):
     print ("Processed vocabulary")
     return voc_proc
         
-#def Occurances_of_words(df, voc):
-#    print (df['Body_answers'].value_counts())
-    
-def NLP_for_answer(answer, tags):
-    ''' Fuck I do not know what I am doing '''
 
-    pass
-    
+'''
+###############################################################################
+Main
+###############################################################################
+'''
 
-#def main():
-#   '''Do all of our shit.'''
 
 # Choose dataset
 work_dir = r_dir
@@ -168,6 +171,7 @@ voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'),
 # Separate sets
 df_train, df_test = sk.model_selection.train_test_split(df, test_size = 0.01, 
                                                         random_state = 0)
+
 
 # Train linear regression of Score_std over DeltaT
 X_train = np.array([t.total_seconds() for t in df_train.DeltaT])
@@ -198,6 +202,17 @@ plt.ylabel('Log(Standardized score)')
 plt.legend()
 #plt.savefig(os.path.join(work_dir, 'log_Score_VS_DeltaT.png'), dpi = 1200)
 plt.show()
+xx = np.linspace(0, 2e8)
+yy = np.exp(lm.predict(xx.reshape(-1, 1)))
+plt.scatter(X_test[y_test > 0], y_test[y_test > 0],
+            color = 'blue', label = 'Test data')
+plt.plot(xx, yy, color = 'red', label = 'Linear regression on log(score)')
+plt.xlabel('Time elapsed between question and answer (s)')
+plt.ylabel('Standardized score')
+plt.legend()
+#plt.savefig(os.path.join(work_dir, 'Log_Score_VS_DeltaT_normalscale.png'), dpi = 1200)
+plt.show()
+
 
 # Train linear regression of Score_std over Bodylength_std
 X_train = df_train.Bodylength_std
@@ -216,6 +231,7 @@ plt.ylabel('Standardized score')
 plt.legend()
 #plt.savefig(os.path.join(work_dir, 'Score_VS_Bodylength.png'), dpi = 1200)
 plt.show()
+
 
 # Train logistic regression of IsAcceptedAnswer over Score_std
 X_train = df_train.Score_std
@@ -237,6 +253,7 @@ plt.ylabel('Category of answer (1 is accepted)')
 plt.legend()
 plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_Score.png'), dpi = 1200)
 plt.show()
+
 
 # Train logistic regression of IsAcceptedAnswer over LinksNumber
 X_train = df_train[['LinksNumber', 'CodeNumber']]
