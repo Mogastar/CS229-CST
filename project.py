@@ -268,7 +268,7 @@ y_pred = lgm.predict(X_test)
 plt.scatter(X_test[y_test == True].LinksNumber, X_test[y_test == True].CodeNumber, 
             color = 'blue', label = 'Accepted answers')
 plt.scatter(X_test[y_test == False].LinksNumber, X_test[y_test == False].CodeNumber, 
-            color = 'red', label = 'Accepted answers')
+            color = 'red', label = 'Other answers')
 # Plot boundary line
 coef = lgm.coef_[0]
 xx = np.linspace(0, 8)
