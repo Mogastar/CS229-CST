@@ -277,7 +277,7 @@ plt.plot(xx, yy, color = 'black', label = 'Boundary line')
 plt.xlabel('Number of links')
 plt.ylabel('Number of code blocks')
 plt.legend()
-plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_(LinksNumber+CodeNumber).png'), dpi = 1200)
+plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_LinksNumber+CodeNumber.png'), dpi = 1200)
 plt.show()
 
    
