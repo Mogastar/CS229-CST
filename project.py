@@ -7,7 +7,9 @@ import pandas as pd
 import sklearn as sk
 import matplotlib.pyplot as plt
 import re
-
+import pickle
+import glob
+import scipy
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -148,6 +150,73 @@ def process_voc(vocfile, word_files = [], process = False):
     return voc_proc
         
 
+def get_design(df, voc, start, end, dir):
+    ''' 
+    Get elements for sparse design matrix in COO format. 
+      - df: whole dataframe
+      - voc: dictionary('word': index)
+      - start, end: line indexes we want to process [start, end) 
+    '''
+    
+    val = []
+    row = []
+    col = []
+    # Construct sparse matrix
+    for i in range(start, end):
+        body = df['Body_answers'].iloc[i]
+        word_nb = stemming(body)
+        for word in word_nb:
+            val.append(word_nb[word])
+            row.append(i)
+            col.append(voc[word])
+    # Save matrix
+    with open(os.path.join(dir, 'val_{0}_{1}.txt'.format(start, end-1)),
+              'w') as valf:
+        pickle.dump(val, valf)
+    with open(os.path.join(dir, 'row_{0}_{1}.txt'.format(start, end-1)),
+              'w') as rowf:
+        pickle.dump(row, rowf)
+    with open(os.path.join(dir, 'col_{0}_{1}.txt'.format(start, end-1)),
+              'w') as colf:
+        pickle.dump(col, colf)
+        
+        
+def aggregate_design(dir, shape):
+    ''' 
+    Aggregate design matrix given in COO format. 
+      - dir: directory where we can expect to find
+        - val_*_*.txt files
+        - row_*_*.txt files
+        - col_*_*.txt files
+      - shape: tuple for the aggregated matrix shape
+    '''
+    
+    # Values
+    val= []
+    for valname in glob.glob(os.path.join(dir, 'val_*.txt')):
+        with open(valname, 'r') as valf:
+            val += pickle.load(valf)
+    # Row
+    row = []
+    for rowname in glob.glob(os.path.join(dir, 'row_*.txt')):
+        with open(rowname, 'r') as rowf:
+            row += pickle.load(rowf)
+    # Col
+    col = []
+    for colname in glob.glob(os.path.join(dir, 'col_*.txt')):
+        with open(colname, 'r') as colf:
+            col += pickle.load(colf)
+            
+    # Construct sparse matrix
+    sparse = scipy.sparse.coo_matrix((val, (row, col)), shape = shape)
+    
+    return sparse
+    
+    
+        
+        
+
+
 '''
 ###############################################################################
 Main
@@ -172,7 +241,7 @@ voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'),
 df_train, df_test = sk.model_selection.train_test_split(df, test_size = 0.01, 
                                                         random_state = 0)
 
-
+'''
 # Train linear regression of Score_std over DeltaT
 X_train = np.array([t.total_seconds() for t in df_train.DeltaT])
 y_train = df_train.Score_std
@@ -279,7 +348,7 @@ plt.ylabel('Number of code blocks')
 plt.legend()
 plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_LinksNumber+CodeNumber.png'), dpi = 1200)
 plt.show()
-
+'''
    
 #if (__name__ == '__main__'):
 #    main()
