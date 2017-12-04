@@ -152,7 +152,6 @@ def process_voc(vocfile, word_files = [], process = False):
     return voc_proc
         
 
-<<<<<<< HEAD
 def get_design(df, voc, start, end, dir):
     ''' 
     Get elements for sparse design matrix in COO format. 
