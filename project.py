@@ -10,6 +10,7 @@ import re
 import pickle
 import glob
 import scipy
+import itertools
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
 
@@ -152,7 +153,7 @@ def process_voc(vocfile, word_files = [], process = False):
     return voc_proc
         
 
-def get_design(df, voc, start, end, dir):
+def get_design(df, voc, start, end, work_dir, word_files = []):
     ''' 
     Get elements for sparse design matrix in COO format. 
       - df: whole dataframe
@@ -165,28 +166,28 @@ def get_design(df, voc, start, end, dir):
     col = []
     # Construct sparse matrix
     for i in range(start, end):
-        body = df['Body_answers'].iloc[i]
-        word_nb = stemming(body)
+        word_stream = df['Body_answers'].iloc[i]
+        word_nb = stemming(word_stream, word_files)
         for word in word_nb:
             val.append(word_nb[word])
             row.append(i)
             col.append(voc[word])
     # Save matrix
-    with open(os.path.join(dir, 'val_{0}_{1}.txt'.format(start, end-1)),
+    with open(os.path.join(work_dir, 'val_{0}_{1}.txt'.format(start, end-1)),
               'w') as valf:
         pickle.dump(val, valf)
-    with open(os.path.join(dir, 'row_{0}_{1}.txt'.format(start, end-1)),
+    with open(os.path.join(work_dir, 'row_{0}_{1}.txt'.format(start, end-1)),
               'w') as rowf:
         pickle.dump(row, rowf)
-    with open(os.path.join(dir, 'col_{0}_{1}.txt'.format(start, end-1)),
+    with open(os.path.join(work_dir, 'col_{0}_{1}.txt'.format(start, end-1)),
               'w') as colf:
         pickle.dump(col, colf)
         
         
-def aggregate_design(dir, shape):
+def aggregate_design(work_dir, shape):
     ''' 
     Aggregate design matrix given in COO format. 
-      - dir: directory where we can expect to find
+      - work_dir: directory where we can expect to find
         - val_*_*.txt files
         - row_*_*.txt files
         - col_*_*.txt files
@@ -195,17 +196,17 @@ def aggregate_design(dir, shape):
     
     # Values
     val= []
-    for valname in glob.glob(os.path.join(dir, 'val_*.txt')):
+    for valname in glob.glob(os.path.join(work_dir, 'val_*.txt')):
         with open(valname, 'r') as valf:
             val += pickle.load(valf)
     # Row
     row = []
-    for rowname in glob.glob(os.path.join(dir, 'row_*.txt')):
+    for rowname in glob.glob(os.path.join(work_dir, 'row_*.txt')):
         with open(rowname, 'r') as rowf:
             row += pickle.load(rowf)
     # Col
     col = []
-    for colname in glob.glob(os.path.join(dir, 'col_*.txt')):
+    for colname in glob.glob(os.path.join(work_dir, 'col_*.txt')):
         with open(colname, 'r') as colf:
             col += pickle.load(colf)
             
@@ -215,14 +216,42 @@ def aggregate_design(dir, shape):
     return sparse
         
 
-def stemming(word_stream, word_files):
+def stemming(word_stream, word_files = []):
+    '''
+    Take a string and return a dictionary with words and their number of 
+    occurences.
+      - word_stream: string
+      - word_files: list of filenames strings for additional words
+                    to check for
+    '''
+    
+    # Get words
     wordList = re.findall(r"\w+|[^\w\s]", word_stream)
     dictList = [stemmer.stem(word) for word in wordList]
 
-    newList = [ word for word in dictList if len(word) >= 3 and len(word) < 15]
-
+    # Remove some words
+    newList = []
+    for word in dictList:
+        # Remove one character words
+        if len(word) < 2:
+            continue
+        # Remove words too long
+        if len(word) > 15:
+            continue
+        # Remove numbers
+        if (word.isdigit()):
+            continue
+        # Remove words with at least 2 digits
+        digit_count = sum(c.isdigit() for c in word)
+        if digit_count > 2:
+            continue
+        # Add word to processed vocabulary otherwise
+        newList.append(word)
+    
+    # Create count dictionary
     dict_count = dict(Counter(newList))
 
+    # Add specific words if they appear
     for word_file in word_files:
         with open(word_file, 'r') as wf:
             words = [line.rstrip() for line in wf]
@@ -240,7 +269,7 @@ Main
 ###############################################################################
 '''
 
-"""
+
 # Choose dataset
 work_dir = r_dir
 # Load data
@@ -253,10 +282,11 @@ process_data(df)
 voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
                   [os.path.join(data_dir, 'HTML_tags.txt')],
                   process = True)   
+voc = dict(itertools.izip(voc, range(len(voc))))
       
 # Separate sets
-df_train, df_test = sk.model_selection.train_test_split(df, test_size = 0.01, 
-                                                        random_state = 0)
+df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
+df_train, df_cv = sk.model_selection.train_test_split(df, test_size = 0.1)
 
 '''
 # Train linear regression of Score_std over DeltaT
@@ -369,4 +399,4 @@ plt.show()
    
 #if (__name__ == '__main__'):
 #    main()
-"""
+
