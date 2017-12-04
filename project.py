@@ -7,6 +7,9 @@ import pandas as pd
 import sklearn as sk
 import matplotlib.pyplot as plt
 import re
+from collections import Counter
+from nltk.stem import PorterStemmer
+from nltk.tokenize import sent_tokenize, word_tokenize
 
 
 locale.setlocale(locale.LC_ALL, '')
@@ -148,13 +151,31 @@ def process_voc(vocfile, word_files = [], process = False):
     return voc_proc
         
 
+def stemming(word_stream, word_files):
+    wordList = re.findall(r"\w+|[^\w\s]", word_stream)
+    dictList = [stemmer.stem(word) for word in wordList]
+
+    newList = [ word for word in dictList if len(word) >= 3 and len(word) < 15]
+
+    dict_count = dict(Counter(newList))
+
+    for word_file in word_files:
+        with open(word_file, 'r') as wf:
+            words = [line.rstrip() for line in wf]
+            for word in words:
+                occur = word_stream.count(word)
+                if occur != 0:
+                    dict_count[word] = occur
+
+    return dict_count
+
 '''
 ###############################################################################
 Main
 ###############################################################################
 '''
 
-
+"""
 # Choose dataset
 work_dir = r_dir
 # Load data
@@ -283,3 +304,4 @@ plt.show()
    
 #if (__name__ == '__main__'):
 #    main()
+"""
