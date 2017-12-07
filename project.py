@@ -14,6 +14,8 @@ import itertools
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
 
+os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
+
 locale.setlocale(locale.LC_ALL, '')
 
 # Define directories
@@ -62,8 +64,11 @@ def load_data(dir):
     return (df, tags)
 
 
-def process_data(df):
+def process_data(df0, threshold = 3):
     '''Add features.'''
+    
+    # Only keep answers whose question score is >= 5
+    df = df0[df0.Score_questions >= threshold]
     
     # DeltaT between question and answer dates
     df['DeltaT'] = df['CreationDate_answers'] - df['CreationDate_questions']
@@ -84,6 +89,7 @@ def process_data(df):
                       df['Score_questions'].iloc[i]) for i in range(len(df))]
 
     print ("Processed data")
+    return df
 
 
 def get_voc(df, vocfile):
@@ -92,8 +98,8 @@ def get_voc(df, vocfile):
     # Get vocabulary
     allwords = []
     for i in range(len(df)):
-        allwords += [stemmer.stem(word) for word in re.findall(r"\w+|[^\w\s]", 
-                             df['Body_answers'].iloc[i])]
+        word_stream = df['Body_answers'].iloc[i]
+        allwords += stemming(word_stream).keys()
         if (i % 10000 == 0):
             print ("Done {0}/{1}".format(i+1, len(df)))
     voc = set(allwords)
@@ -112,45 +118,29 @@ def process_voc(vocfile, word_files = [], process = False):
     
     # Read and sort vocabulary
     with open(vocfile, 'r') as vocf:
-        voc_raw = [line.rstrip() for line in vocf]
-    voc_raw.sort(cmp = locale.strcoll)
+        voc = [line.rstrip() for line in vocf]
+    voc.sort(cmp = locale.strcoll)
     
     # Return if not processing
-    if  not process:
+    if not process:
         print ("Read vocabulary")
-        return voc_raw
+        return voc
     
-    # Process and write
-    voc_proc = []
-    for word in voc_raw:
-        # Remove one character words
-        if len(word) <= 1:
-            continue
-        # Remove numbers
-        if (word.isdigit()):
-            continue
-        # Remove words with at least 2 digits
-        digit_count = sum(c.isdigit() for c in word)
-        if digit_count > 2:
-            continue
-        # Add word to processed vocabulary otherwise
-        voc_proc.append(word)
-        
     # Add words from files, such as HTML tags
     for word_file in word_files:
         with open(word_file, 'r') as wf:
             words = [line.rstrip() for line in wf]
-        voc_proc += words
+        voc += words
             
     # Write to file
-    voc_proc = list(set(voc_proc))
-    voc_proc.sort(cmp = locale.strcoll)
+    voc = list(set(voc))
+    voc.sort(cmp = locale.strcoll)
     with open(vocfile, 'w') as vocf:
-        for word in voc_proc:
+        for word in voc:
             vocf.write("%s \n" % word)
 
     print ("Processed vocabulary")
-    return voc_proc
+    return voc
         
 
 def get_design(df, voc, start, end, work_dir, word_files = []):
@@ -182,6 +172,8 @@ def get_design(df, voc, start, end, work_dir, word_files = []):
     with open(os.path.join(work_dir, 'col_{0}_{1}.txt'.format(start, end-1)),
               'w') as colf:
         pickle.dump(col, colf)
+    # Print message
+    print ("Got design matrix for indices [{0}, {1}).".format(start, end))
         
         
 def aggregate_design(work_dir, shape):
@@ -273,130 +265,26 @@ Main
 # Choose dataset
 work_dir = r_dir
 # Load data
-df, tags = load_data(work_dir)
+df0, tags = load_data(work_dir)
 # Process data
-process_data(df)
+df = process_data(df0)
 # Get vocabulary (first time)
 #voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
 # Read dictionary (other times)
+word_files = [os.path.join(data_dir, 'HTML_tags.txt')]
 voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
-                  [os.path.join(data_dir, 'HTML_tags.txt')],
-                  process = True)   
+                  word_files, process = False)   
 voc = dict(itertools.izip(voc, range(len(voc))))
-      
+     
+# Get design matrix (first time)
+#for i in range((len(df) + 9999) / 10000):
+#    start = 10000 * i
+#    end = min(10000 * (i+1), len(df))
+#    get_design(df, voc, start, end, work_dir, word_files)
+# Aggregate design matrix in sparse format
+sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
+
 # Separate sets
 df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
 df_train, df_cv = sk.model_selection.train_test_split(df, test_size = 0.1)
-
-'''
-# Train linear regression of Score_std over DeltaT
-X_train = np.array([t.total_seconds() for t in df_train.DeltaT])
-y_train = df_train.Score_std
-logy_train = np.log(y_train[y_train > 0])
-lm = sk.linear_model.LinearRegression()
-loglm = sk.linear_model.LinearRegression()
-lm.fit(X_train.reshape(-1, 1), y_train)
-loglm.fit(X_train[y_train > 0].reshape(-1, 1), logy_train)
-# Test it
-X_test = np.array([t.total_seconds() for t in df_test.DeltaT])
-y_test = df_test.Score_std
-logy_test = np.log(y_test[y_test > 0])
-y_pred = lm.predict(X_test.reshape(-1, 1))
-logy_pred = lm.predict(X_test[y_test > 0].reshape(-1, 1))    
-# Plot
-plt.scatter(X_test, y_test, color = 'blue', label = 'Test data')
-plt.plot(X_test, y_pred, color = 'red', label = 'Linear regression')
-plt.xlabel('Time elapsed between question and answer (s)')
-plt.ylabel('Standardized score')
-plt.legend()
-#plt.savefig(os.path.join(work_dir, 'Score_VS_DeltaT.png'), dpi = 1200)
-plt.show()
-plt.scatter(X_test[y_test > 0], logy_test, color = 'blue', label = 'Test data')
-plt.plot(X_test[y_test > 0], logy_pred, color = 'red', label = 'Linear regression')
-plt.xlabel('Time elapsed between question and answer (s)')
-plt.ylabel('Log(Standardized score)')
-plt.legend()
-#plt.savefig(os.path.join(work_dir, 'log_Score_VS_DeltaT.png'), dpi = 1200)
-plt.show()
-xx = np.linspace(0, 2e8)
-yy = np.exp(lm.predict(xx.reshape(-1, 1)))
-plt.scatter(X_test[y_test > 0], y_test[y_test > 0],
-            color = 'blue', label = 'Test data')
-plt.plot(xx, yy, color = 'red', label = 'Linear regression on log(score)')
-plt.xlabel('Time elapsed between question and answer (s)')
-plt.ylabel('Standardized score')
-plt.legend()
-#plt.savefig(os.path.join(work_dir, 'Log_Score_VS_DeltaT_normalscale.png'), dpi = 1200)
-plt.show()
-
-
-# Train linear regression of Score_std over Bodylength_std
-X_train = df_train.Bodylength_std
-y_train = df_train.Score_std
-lm = sk.linear_model.LinearRegression()
-lm.fit(X_train.values.reshape(-1, 1), y_train)
-# Test it
-X_test = df_test.Bodylength_std
-y_test = df_test.Score_std
-y_pred = lm.predict(X_test.values.reshape(-1, 1))
-# Plot
-plt.scatter(X_test, y_test, color = 'blue', label = 'Test data')
-plt.plot(X_test, y_pred, color = 'red', label = 'Linear regression')
-plt.xlabel('Standardized bodylength')
-plt.ylabel('Standardized score')
-plt.legend()
-#plt.savefig(os.path.join(work_dir, 'Score_VS_Bodylength.png'), dpi = 1200)
-plt.show()
-
-
-# Train logistic regression of IsAcceptedAnswer over Score_std
-X_train = df_train.Score_std
-y_train = df_train.IsAcceptedAnswer
-lgm = sk.linear_model.LogisticRegression()
-lgm.fit(X_train.values.reshape(-1, 1), y_train)
-# Test it
-X_test = df_test.Score_std
-y_test = df_test.IsAcceptedAnswer
-y_pred = lgm.predict(X_test.values.reshape(-1, 1))
-# Plot
-plt.scatter(X_test, y_test, color = 'blue')
-# Plot boundary line
-xx = np.linspace(-4, 12)
-yy = 1 / (1 + np.exp(-(xx * lgm.coef_ + lgm.intercept_))).ravel()
-plt.plot(xx, yy, color = 'black', label = 'Logistic Regression')
-plt.xlabel('Standardized score')
-plt.ylabel('Category of answer (1 is accepted)')
-plt.legend()
-plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_Score.png'), dpi = 1200)
-plt.show()
-
-
-# Train logistic regression of IsAcceptedAnswer over LinksNumber
-X_train = df_train[['LinksNumber', 'CodeNumber']]
-y_train = df_train.IsAcceptedAnswer
-lgm = sk.linear_model.LogisticRegression()
-lgm.fit(X_train, y_train)
-# Test it
-X_test = df_test[['LinksNumber', 'CodeNumber']]
-y_test = df_test.IsAcceptedAnswer
-y_pred = lgm.predict(X_test)
-# Plot
-plt.scatter(X_test[y_test == True].LinksNumber, X_test[y_test == True].CodeNumber, 
-            color = 'blue', label = 'Accepted answers')
-plt.scatter(X_test[y_test == False].LinksNumber, X_test[y_test == False].CodeNumber, 
-            color = 'red', label = 'Other answers')
-# Plot boundary line
-coef = lgm.coef_[0]
-xx = np.linspace(0, 8)
-yy = -coef[0] / coef[1] * xx - (lgm.intercept_[0]) / coef[1]
-plt.plot(xx, yy, color = 'black', label = 'Boundary line')
-plt.xlabel('Number of links')
-plt.ylabel('Number of code blocks')
-plt.legend()
-plt.savefig(os.path.join(work_dir, 'AcceptedAnswer_VS_LinksNumber+CodeNumber.png'), dpi = 1200)
-plt.show()
-'''
-   
-#if (__name__ == '__main__'):
-#    main()
 
