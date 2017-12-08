@@ -258,16 +258,6 @@ def stemming(word_stream, word_files = []):
     return dict_count
 
 
-def plot_accuracy(x, y, x_legend):
-    """Plot accuracy as a function of x."""
-    x = np.array(x)
-    y = np.array(y)
-    plt.title('Classification accuracy as a function of %s' % x_legend)
-    plt.xlabel('%s' % x_legend)
-    plt.ylabel('Accuracy')
-    plt.grid(True)
-    plt.plot(x, y)
-
 '''
 ###############################################################################
 Main
