@@ -205,6 +205,7 @@ def aggregate_design(work_dir, shape):
     # Construct sparse matrix
     sparse = scipy.sparse.coo_matrix((val, (row, col)), shape = shape)
     
+    print ("Aggregated sparse matrix.")
     return sparse
         
 
@@ -268,13 +269,14 @@ work_dir = r_dir
 df0, tags = load_data(work_dir)
 # Process data
 df = process_data(df0)
+del df0
 # Get vocabulary (first time)
 #voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
 # Read dictionary (other times)
 word_files = [os.path.join(data_dir, 'HTML_tags.txt')]
-voc = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
+voc_list = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
                   word_files, process = False)   
-voc = dict(itertools.izip(voc, range(len(voc))))
+voc = dict(itertools.izip(voc_list, range(len(voc_list))))
      
 # Get design matrix (first time)
 #for i in range((len(df) + 9999) / 10000):
@@ -283,6 +285,7 @@ voc = dict(itertools.izip(voc, range(len(voc))))
 #    get_design(df, voc, start, end, work_dir, word_files)
 # Aggregate design matrix in sparse format
 sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
+X = sparse_X.todense()
 
 # Separate sets
 df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
