@@ -268,10 +268,10 @@ work_dir = r_dir
 # Load data
 df0, tags = load_data(work_dir)
 # Process data
-df = process_data(df0)
+df = process_data(df0, threshold = 5)
 del df0
 # Get vocabulary (first time)
-#voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
+voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
 # Read dictionary (other times)
 word_files = [os.path.join(data_dir, 'HTML_tags.txt')]
 voc_list = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
@@ -279,15 +279,15 @@ voc_list = process_voc(os.path.join(work_dir, 'Vocabulary.txt'),
 voc = dict(itertools.izip(voc_list, range(len(voc_list))))
      
 # Get design matrix (first time)
-#for i in range((len(df) + 9999) / 10000):
-#    start = 10000 * i
-#    end = min(10000 * (i+1), len(df))
-#    get_design(df, voc, start, end, work_dir, word_files)
+for i in range((len(df) + 9999) / 10000):
+    start = 10000 * i
+    end = min(10000 * (i+1), len(df))
+    get_design(df, voc, start, end, work_dir, word_files)
 # Aggregate design matrix in sparse format
 sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
-X = sparse_X.todense()
+#X = sparse_X.todense()
 
 # Separate sets
-df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
-df_train, df_cv = sk.model_selection.train_test_split(df, test_size = 0.1)
+#df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
+#df_train, df_cv = sk.model_selection.train_test_split(df, test_size = 0.1)
 
