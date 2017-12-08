@@ -1,3 +1,4 @@
+from __future__ import division
 import locale
 import matplotlib.pyplot as plt
 import nltk
@@ -14,8 +15,9 @@ import operator
 import copy
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
+from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 
-# os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
+#os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -314,7 +316,7 @@ def separate(val, row, col, y, test_size):
 
 '''
 ###############################################################################
-Main
+Data manipulation
 ###############################################################################
 '''
 
@@ -350,6 +352,8 @@ if first_time:
 # Aggregate design matrix in sparse format
 val, row, col = aggregate_design(work_dir)
 y = np.array(df['IsAcceptedAnswer'], dtype = int)
+sparse_X = scipy.sparse.coo_matrix((val, (row, col)), 
+                                   shape = (len(y), len(voc)))
 
 # Separate datasets
 val_temp, row_temp, col_temp, y_temp, val_test, row_test, col_test, y_test = \
@@ -368,3 +372,19 @@ del val_cv, row_cv, col_cv
 X_test = scipy.sparse.coo_matrix((val_test, (row_test, col_test)),
                                  shape = (len(y_test), len(voc)))
 del val_test, row_test, col_test
+
+
+'''
+###############################################################################
+Tests
+###############################################################################
+'''
+
+
+# Tests
+
+clf = MultinomialNB()
+y_pred = clf.fit(sparse_X, df['IsAcceptedAnswer']).predict(sparse_X)
+
+accuracy = sum([ai and bi for ai,bi in zip(df['IsAcceptedAnswer'],y_pred)])/len(y_pred)
+print(accuracy)
