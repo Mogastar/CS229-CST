@@ -256,6 +256,17 @@ def stemming(word_stream, word_files = []):
 
     return dict_count
 
+
+def plot_accuracy(x, y, x_legend):
+    """Plot accuracy as a function of x."""
+    x = np.array(x)
+    y = np.array(y)
+    plt.title('Classification accuracy as a function of %s' % x_legend)
+    plt.xlabel('%s' % x_legend)
+    plt.ylabel('Accuracy')
+    plt.grid(True)
+    plt.plot(x, y)
+
 '''
 ###############################################################################
 Main
@@ -288,7 +299,7 @@ sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
 #X = sparse_X.todense()
 
 clf = MultinomialNB()
-clf.fit(sparse_X, df['IsAcceptedAnswer'])
+y_pred = clf.fit(sparse_X, df['IsAcceptedAnswer']).predic()
 
 # Separate sets
 #df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
