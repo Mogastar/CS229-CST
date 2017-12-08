@@ -15,6 +15,7 @@ import itertools
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
+from sklearn import linear_model
 
 #os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
 
@@ -257,6 +258,28 @@ def stemming(word_stream, word_files = []):
 
     return dict_count
 
+
+def Reg_nS_Deltat(score, time):
+    
+    time = time.dt.total_seconds()
+    time = np.array(time)
+    ind  = np.argsort(time)
+    time_sorted = np.sort(time)
+    time_sorted = time_sorted[time_sorted >= 0]
+    start_ind = len(time - time_sorted)
+    ind = ind[start_ind:]
+    
+    score = np.array(score)
+    score_sorted = score[ind]
+
+    
+    
+
+    reg = linear_model.Ridge(alpha = .5)
+    interc = np.ones(len(score))
+    X = np.column_stack((interc, score))
+    reg.fit(X, time)
+    print(reg)
 
 '''
 ###############################################################################
