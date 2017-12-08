@@ -286,7 +286,7 @@ def Reg_nS_Deltat(score, time):
     print(reg)
 
 
-def separate(val, row, col, y, test_size):
+def separate(val, row, col, y, test_size, seed = 0):
     '''
     Separate a sparse matrix in COO format and a vector y into 2 sets
         - set 0 of size (1 - test_size) %
@@ -296,7 +296,8 @@ def separate(val, row, col, y, test_size):
     # Separate indices
     ind = np.arange(len(y))
     ind0, ind1 = sk.model_selection.train_test_split(ind, 
-                                                     test_size = test_size)
+                                                     test_size = test_size, 
+                                                     random_state = seed)
     ind0.sort()
     ind1.sort()
     ind1_set = set(ind1)
@@ -409,9 +410,9 @@ Tests
 MNB = MultinomialNB()
 MNB.fit(X_train, y_train)
 y_MNB = MNB.predict(X_cv)
-accuracy = np.mean(y_MNB == y_cv)
+accuracy_MNB = np.mean(y_MNB == y_cv)
 
 BNB = BernoulliNB()
 BNB.fit(X_train, y_train)
 y_BNB = BNB.predict(X_cv)
-accuracy = np.mean(y_BNB == y_cv)
+accuracy_BNB = np.mean(y_BNB == y_cv)
