@@ -6,12 +6,13 @@ import numpy as np
 import os
 import pandas as pd
 import sklearn as sk
-import matplotlib.pyplot as plt
 import re
 import pickle
 import glob
 import scipy
 import itertools
+import operator
+import copy
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
@@ -179,7 +180,7 @@ def get_design(df, voc, start, end, work_dir, word_files = []):
     print ("Got design matrix for indices [{0}, {1}).".format(start, end))
         
         
-def aggregate_design(work_dir, shape):
+def aggregate_design(work_dir):
     ''' 
     Aggregate design matrix given in COO format. 
       - work_dir: directory where we can expect to find
@@ -204,12 +205,15 @@ def aggregate_design(work_dir, shape):
     for colname in glob.glob(os.path.join(work_dir, 'col_*.txt')):
         with open(colname, 'r') as colf:
             col += pickle.load(colf)
-            
-    # Construct sparse matrix
-    sparse = scipy.sparse.coo_matrix((val, (row, col)), shape = shape)
+    
+    # Sort by row for easier slicing
+    sorted_row_idx = np.argsort(row)
+    val = np.array(val)[sorted_row_idx]
+    row = np.array(row)[sorted_row_idx]
+    col = np.array(col)[sorted_row_idx]
     
     print ("Aggregated sparse matrix.")
-    return sparse
+    return val, row, col
         
 
 def stemming(word_stream, word_files = []):
@@ -281,12 +285,67 @@ def Reg_nS_Deltat(score, time):
     reg.fit(X, time)
     print(reg)
 
+
+def separate(val, row, col, y, test_size):
+    '''
+    Separate a sparse matrix in COO format and a vector y into 2 sets
+        - set 0 of size (1 - test_size) %
+        - set 1 of size test_size %.
+    '''
+    
+    # Separate indices
+    ind = np.arange(len(y))
+    ind0, ind1 = sk.model_selection.train_test_split(ind, 
+                                                     test_size = test_size)
+    ind0.sort()
+    ind1.sort()
+    ind1_set = set(ind1)
+    
+    # Separate X
+    sparse_ind0 = []
+    sparse_ind1 = []
+    not0 = 0
+    not1 = 0
+    row2 = copy.copy(row)
+    last_row = -1
+    for i in range(len(row)):
+        if row[i] in ind1_set:
+            sparse_ind1.append(i)
+            row2[i] -= not1
+            if last_row != row[i]:
+                not0 += 1
+        else:
+            sparse_ind0.append(i)
+            row2[i] -= not0
+            if last_row != row[i]:
+                not1 += 1
+        last_row = row[i]
+        
+    f0 = operator.itemgetter(*sparse_ind0)
+    val0 = np.array(f0(val))
+    row0 = np.array(f0(row2))
+    col0 = np.array(f0(col))
+    f1 = operator.itemgetter(*sparse_ind1)
+    val1 = np.array(f1(val))
+    row1 = np.array(f1(row2))
+    col1 = np.array(f1(col))
+    
+    # Separate y
+    y0 = y[ind0]
+    y1 = y[ind1]
+    
+    return val0, row0, col0, y0, val1, row1, col1, y1
+
+
 '''
 ###############################################################################
-Main
+Data manipulation
 ###############################################################################
 '''
 
+
+threshold = 5
+first_time = False
 
 # Choose dataset
 work_dir = r_dir
@@ -295,28 +354,64 @@ df0, tags = load_data(work_dir)
 # Process data
 df = process_data(df0, threshold = 5)
 del df0
+
 # Get vocabulary (first time)
-#voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
+if first_time:
+    voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
+    
 # Read dictionary (other times)
 word_files = [os.path.join(data_dir, 'HTML_tags.txt')]
 voc_list = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
-                       word_files, process = False)   
+                       word_files, process = first_time)   
 voc = dict(itertools.izip(voc_list, range(len(voc_list))))
      
 # Get design matrix (first time)
-#for i in range((len(df) + 9999) / 10000):
-#    start = 10000 * i
-#    end = min(10000 * (i+1), len(df))
-#    get_design(df, voc, start, end, work_dir, word_files)
+if first_time:
+    for i in range((len(df) + 9999) / 10000):
+        start = 10000 * i
+        end = min(10000 * (i+1), len(df))
+        get_design(df, voc, start, end, work_dir, word_files)
+        
 # Aggregate design matrix in sparse format
-sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
-#X = sparse_X.todense()
+val, row, col = aggregate_design(work_dir)
+y = np.array(df['IsAcceptedAnswer'], dtype = int)
+sparse_X = scipy.sparse.coo_matrix((val, (row, col)), 
+                                   shape = (len(y), len(voc)))
 
-clf = MultinomialNB()
-y_pred = clf.fit(sparse_X, df['IsAcceptedAnswer']).predict(sparse_X)
+# Separate datasets
+val_temp, row_temp, col_temp, y_temp, val_test, row_test, col_test, y_test = \
+    separate(val, row, col, y, test_size = 0.01)
+val_train, row_train, col_train, y_train, val_cv, row_cv, col_cv, y_cv = \
+    separate(val_temp, row_temp, col_temp, y_temp, test_size = 0.1)
+del val_temp, row_temp, col_temp, y_temp
 
-accuracy = sum([ai and bi for ai,bi in zip(df['IsAcceptedAnswer'],y_pred)])/len(y_pred)
-print(accuracy)
-# Separate sets
-#df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
-#df_train, df_cv = sk.model_selection.train_test_split(df, test_size = 0.1)
+# Construct sparse matrices
+X_train = scipy.sparse.coo_matrix((val_train, (row_train, col_train)),
+                                  shape = (len(y_train), len(voc)))
+del val_train, row_train, col_train
+X_cv = scipy.sparse.coo_matrix((val_cv, (row_cv, col_cv)),
+                                  shape = (len(y_cv), len(voc)))
+del val_cv, row_cv, col_cv
+X_test = scipy.sparse.coo_matrix((val_test, (row_test, col_test)),
+                                 shape = (len(y_test), len(voc)))
+del val_test, row_test, col_test
+
+
+'''
+###############################################################################
+Tests
+###############################################################################
+'''
+
+
+# Tests
+
+MNB = MultinomialNB()
+MNB.fit(X_train, y_train)
+y_MNB = MNB.predict(X_cv)
+accuracy = np.mean(y_MNB == y_cv)
+
+BNB = BernoulliNB()
+BNB.fit(X_train, y_train)
+y_BNB = BNB.predict(X_cv)
+accuracy = np.mean(y_BNB == y_cv)
