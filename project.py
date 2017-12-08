@@ -1,3 +1,4 @@
+from __future__ import division
 import locale
 import matplotlib.pyplot as plt
 import nltk
@@ -299,8 +300,10 @@ sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
 #X = sparse_X.todense()
 
 clf = MultinomialNB()
-y_pred = clf.fit(sparse_X, df['IsAcceptedAnswer']).predic()
+y_pred = clf.fit(sparse_X, df['IsAcceptedAnswer']).predict(sparse_X)
 
+accuracy = sum([ai and bi for ai,bi in zip(df['IsAcceptedAnswer'],y_pred)])/len(y_pred)
+print(accuracy)
 # Separate sets
 #df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
 #df_train, df_cv = sk.model_selection.train_test_split(df, test_size = 0.1)
