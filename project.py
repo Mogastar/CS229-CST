@@ -14,7 +14,7 @@ import itertools
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
 
-os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
+# os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -271,18 +271,18 @@ df0, tags = load_data(work_dir)
 df = process_data(df0, threshold = 5)
 del df0
 # Get vocabulary (first time)
-voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
+#voc = get_voc(df, os.path.join(work_dir, 'Vocabulary.txt'))
 # Read dictionary (other times)
 word_files = [os.path.join(data_dir, 'HTML_tags.txt')]
 voc_list = process_voc(os.path.join(work_dir, 'Vocabulary.txt'), 
-                  word_files, process = False)   
+                       word_files, process = False)   
 voc = dict(itertools.izip(voc_list, range(len(voc_list))))
      
 # Get design matrix (first time)
-for i in range((len(df) + 9999) / 10000):
-    start = 10000 * i
-    end = min(10000 * (i+1), len(df))
-    get_design(df, voc, start, end, work_dir, word_files)
+#for i in range((len(df) + 9999) / 10000):
+#    start = 10000 * i
+#    end = min(10000 * (i+1), len(df))
+#    get_design(df, voc, start, end, work_dir, word_files)
 # Aggregate design matrix in sparse format
 sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
 #X = sparse_X.todense()
