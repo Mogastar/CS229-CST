@@ -287,6 +287,9 @@ voc = dict(itertools.izip(voc_list, range(len(voc_list))))
 sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
 #X = sparse_X.todense()
 
+clf = MultinomialNB()
+clf.fit(sparse_X, df['IsAcceptedAnswer'])
+
 # Separate sets
 #df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
 #df_train, df_cv = sk.model_selection.train_test_split(df, test_size = 0.1)
