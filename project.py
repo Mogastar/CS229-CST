@@ -383,8 +383,12 @@ Tests
 
 # Tests
 
-clf = MultinomialNB()
-y_pred = clf.fit(sparse_X, df['IsAcceptedAnswer']).predict(sparse_X)
+MNB = MultinomialNB()
+MNB.fit(X_train, y_train)
+y_MNB = MNB.predict(X_cv)
+accuracy = np.mean(y_MNB == y_cv)
 
-accuracy = sum([ai and bi for ai,bi in zip(df['IsAcceptedAnswer'],y_pred)])/len(y_pred)
-print(accuracy)
+BNB = BernoulliNB()
+BNB.fit(X_train, y_train)
+y_BNB = BNB.predict(X_cv)
+accuracy = np.mean(y_BNB == y_cv)
