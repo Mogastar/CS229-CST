@@ -264,26 +264,20 @@ def stemming(word_stream, word_files = []):
 
 
 def Reg_nS_Deltat(score, time):
-    
+    '''
+    Running regression on DeltaT and Score_std
+    '''
     time = time.dt.total_seconds()
-    time = np.array(time)
-    ind  = np.argsort(time)
-    time_sorted = np.sort(time)
+    time_sorted = time.sort_values()
     time_sorted = time_sorted[time_sorted >= 0]
-    start_ind = len(time - time_sorted)
-    ind = ind[start_ind:]
-    
-    score = np.array(score)
-    score_sorted = score[ind]
-
-    
+    score_sorted = score.reindex(time_sorted.index)
     
 
-    reg = linear_model.Ridge(alpha = .5)
-    interc = np.ones(len(score))
-    X = np.column_stack((interc, score))
-    reg.fit(X, time)
-    print(reg)
+#    reg = linear_model.Ridge(alpha = .5)
+#    interc = np.ones(len(score))
+#    X = np.column_stack((interc, score))
+#    reg.fit(X, time)
+    return time_sorted
 
 
 def separate(val, row, col, y, test_size):
@@ -410,8 +404,17 @@ MNB = MultinomialNB()
 MNB.fit(X_train, y_train)
 y_MNB = MNB.predict(X_cv)
 accuracy = np.mean(y_MNB == y_cv)
+print(accuracy)
 
 BNB = BernoulliNB()
 BNB.fit(X_train, y_train)
 y_BNB = BNB.predict(X_cv)
 accuracy = np.mean(y_BNB == y_cv)
+print(accuracy)
+
+
+TRA = MNB.predict(X_train)
+accuracy = np.mean(TRA == y_train)
+print(accuracy)
+
+sorted_time = Reg_nS_Deltat(df['Score_std'], df['DeltaT'])
