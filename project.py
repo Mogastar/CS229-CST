@@ -13,8 +13,9 @@ import scipy
 import itertools
 from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
+from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 
-os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
+#os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -255,7 +256,6 @@ def stemming(word_stream, word_files = []):
 
     return dict_count
 
-
 '''
 ###############################################################################
 Main
@@ -285,9 +285,8 @@ voc = dict(itertools.izip(voc_list, range(len(voc_list))))
 #    get_design(df, voc, start, end, work_dir, word_files)
 # Aggregate design matrix in sparse format
 sparse_X = aggregate_design(work_dir, (len(df), len(voc)))
-X = sparse_X.todense()
+# X = sparse_X.todense()
 
 # Separate sets
 df, df_test = sk.model_selection.train_test_split(df, test_size = 0.01)
 df_train, df_cv = sk.model_selection.train_test_split(df, test_size = 0.1)
-
