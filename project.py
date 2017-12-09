@@ -274,7 +274,6 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     time_sorted = time.sort_values()
     time_sorted = time_sorted[time_sorted >= 0]
     ind_sorted  = time_sorted.index.values # indices as numpy array
-    time = time.index.values
     score_sorted = score.reindex(time_sorted.index)
     score_sorted = score_sorted.values     # sorted scores as numpy array
     
@@ -297,7 +296,7 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     reg = linear_model.LinearRegression()
     reg.fit(time_picks, score_picks_log)
     
-    return reg, score_picks_log, time_picks, time
+    return reg, score_picks_log, time_picks, time_sorted, score_sorted
 
 
 def separate(val, row, col, y, test_size, seed = 0):
@@ -433,9 +432,16 @@ proba_BNB = BNB.predict_proba(X_cv)
 accuracy_BNB = np.mean(y_BNB == y_cv)
 print(accuracy_BNB)
 
-reg, score_log, time_picks, time = Reg_nS_Deltat(df['Score_std'], 
-                                                 df['DeltaT'], 5000)
+reg, score_log, time_picks, time_sorted, score_sorted = Reg_nS_Deltat(df['Score_std'], df['DeltaT'], 5000)
 pred = np.exp(reg.predict(time_picks))
-plt.plot(time, df['Score_std'], '.')
+plt.plot(time_sorted, score_sorted, 'x')
 plt.plot(time_picks, pred, 'r-')
+plt.plot(time_picks, np.zeros(pred.shape), 'k-')
+plt.axis([-0.1e8, 3e8, -1, 6])
+plt.axhline(0, color='black')
+plt.axvline(0, color='black')
+plt.xlabel('Time difference (in seconds)')
+plt.ylabel('Standardized score')
+plt.title('Regression on time difference and standardized score')
+plt.savefig("regression_Time_Score.png", dpi=1200)
 
