@@ -20,6 +20,13 @@ from sklearn import linear_model
 from numpy import inf
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
+from sklearn.linear_model import LogisticRegression
+from sklearn.neural_network import MLPClassifier
+from sklearn.model_selection import RandomizedSearchCV
+from sklearn import svm
+from scipy.stats import randint as sp_randint
+from sklearn.ensemble import RandomForestClassifier
+
 
 
 #os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
@@ -314,6 +321,29 @@ def GaussianDA(X, y, analysis_type):
     GDA.fit(X, y)
     return GDA
 
+def Logistic_Regres(X, y):
+    '''
+    Logistic Regression model
+    '''
+    LRM = LogisticRegression(penalty='l2', tol=0.01)
+    LRM.fit(X, y)
+    return LRM
+
+def RFClassifier(X, y):
+    '''
+    Random Forest Classifier
+    '''
+    clf = RandomForestClassifier(n_estimators=20)
+    n_iter_search = 20
+    param_dist = {"max_depth": [3, None],
+                  "min_samples_split": sp_randint(2, 11),
+                  "min_samples_leaf": sp_randint(1, 11),
+                  "bootstrap": [True, False],
+                  "criterion": ["gini", "entropy"]}
+    random_search = RandomizedSearchCV(clf, param_distributions=param_dist,
+                                       n_iter=n_iter_search)
+    random_search.fit(X, y)
+    return random_search
 
 def separate(val, row, col, y, test_size, seed = 0):
     '''
@@ -453,11 +483,11 @@ NB.fit(X_train, y_train[:, 0])
 # Predictions 
 
 pred_NB_train = NB.predict(X_train)
-proba_NB_train = NB.predict_proba(X_train)
+proba_NB_train = np.max(NB.predict_proba(X_train), axis = 1)
 pred_NB_cv = NB.predict(X_cv)
-proba_NB_cv = NB.predict_proba(X_cv)
+proba_NB_cv = np.max(NB.predict_proba(X_cv), axis = 1)
 pred_NB_test = NB.predict(X_test)
-proba_NB_test = NB.predict_proba(X_test)
+proba_NB_test = np.max(NB.predict_proba(X_test), axis = 1)
 
 # Regression on time difference and standardized score
 
@@ -481,9 +511,12 @@ envlp_train = np.exp(reg.predict(y_train[:, 1].reshape(y_train.shape[0], 1)))
 envlp_cv = np.exp(reg.predict(y_cv[:, 1].reshape(y_cv.shape[0], 1)))
 envlp_test = np.exp(reg.predict(y_test[:, 1].reshape(y_test.shape[0], 1)))
 
-data_train = np.stack((pred_NB_train, envlp_train.flatten(), y_train[:, 2]), axis = 1)
-data_cv = np.stack((pred_NB_cv, envlp_cv.flatten(), y_cv[:, 2]), axis = 1)
-data_test = np.stack((pred_NB_test, envlp_test.flatten(), y_test[:, 2]), axis = 1)
+data_train = np.stack((pred_NB_train, proba_NB_train, 
+                       envlp_train.flatten(), y_train[:, 2]), axis = 1)
+data_cv = np.stack((pred_NB_cv, proba_NB_cv, 
+                    envlp_cv.flatten(), y_cv[:, 2]), axis = 1)
+data_test = np.stack((pred_NB_test, proba_NB_test, 
+                      envlp_test.flatten(), y_test[:, 2]), axis = 1)
 
 value_train = y_train[:, 0]
 value_cv = y_cv[:, 0]
@@ -491,8 +524,25 @@ value_test = y_test[:, 0]
 
 ## Guassian discriminant analysis
 
-GDA = GaussianDA(data_train[:, :2], value_train, "Linear")
-value_pred = GDA.predict(data_cv[:, :2])
+GDA = GaussianDA(data_train[:, [1, 2, 3]], value_train, "Linear")
+value_pred = GDA.predict(data_cv[:, [1, 2, 3]])
 accuracy = np.mean(value_pred == value_cv)
-print(accuracy)
+print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*accuracy))
+
+LRM = Logistic_Regres(data_train[:, [0, 2, 3]], value_train)
+value_pred = LRM.predict(data_cv[:, [0, 2, 3]])
+accuracy = np.mean(value_pred == value_cv)
+print("Logistic Regression: {0:.2f}%".format(100*accuracy))
+
+NN = MLPClassifier(alpha = .005)
+NN.fit(data_train[:, [0, 2, 3]], value_train)
+value_pred = NN.predict(data_cv[:, [0, 2, 3]])
+accuracy = np.mean(value_pred == value_cv)
+print("Neural Nets: {0:.2f}%".format(100*accuracy))
+
+RFC = RFClassifier(data_train[:, [1, 2, 3]], value_train)
+value_pred = RFC.predict(data_cv[:, [1, 2, 3]])
+accuracy = np.mean(value_pred == value_cv)
+print("Random Forest Classifier with Cross Validation: {0:.2f}%".format(100*accuracy))
+
 
