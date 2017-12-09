@@ -265,10 +265,11 @@ def stemming(word_stream, word_files = []):
     return dict_count
 
 
-def Reg_nS_Deltat(score, time, nbins = 1000):
+def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     '''
     Running regression on DeltaT and Score_std
     '''
+    
     time = time.dt.total_seconds()
     time_sorted = time.sort_values()
     time_sorted = time_sorted[time_sorted >= 0]
@@ -289,13 +290,14 @@ def Reg_nS_Deltat(score, time, nbins = 1000):
         ind_max        = indices[np.argmax(score_quantile[i])]
         time_picks[i]  = time_sorted.loc[ind_max]
     
-    score_picks[score_picks < 1e-5] = 1e-5    
+    score_picks[score_picks < tol] = tol
     score_picks_log = np.log(score_picks).reshape(len(score_picks), 1)
     time_picks = time_picks.reshape(len(time_picks), 1)
     
     reg = linear_model.LinearRegression()
     reg.fit(time_picks, score_picks_log)
-    return reg, score_picks_log, time_picks
+    
+    return reg, score_picks_log, time_picks, time
 
 
 def separate(val, row, col, y, test_size, seed = 0):
@@ -420,26 +422,20 @@ Tests
 MNB = MultinomialNB()
 MNB.fit(X_train, y_train)
 y_MNB = MNB.predict(X_cv)
+proba_MNB = MNB.predict_proba(X_cv)
 accuracy_MNB = np.mean(y_MNB == y_cv)
 print(accuracy_MNB)
 
 BNB = BernoulliNB()
 BNB.fit(X_train, y_train)
 y_BNB = BNB.predict(X_cv)
+proba_BNB = BNB.predict_proba(X_cv)
 accuracy_BNB = np.mean(y_BNB == y_cv)
 print(accuracy_BNB)
 
-
-TRA = MNB.predict(X_train)
-accuracy = np.mean(TRA == y_train)
-print(accuracy)
-
-score = df['Score_std']
-time = df['DeltaT']
-
-reg, score_log, time = Reg_nS_Deltat(df['Score_std'], df['DeltaT'], 5000)
-time_days = np.to_datetime(time)
-pred = np.exp(reg.predict(time))
-plt.plot(df['DeltaT'], df['Score_std'], '.')
-plt.plot(time, pred, 'r-')
+reg, score_log, time_picks, time = Reg_nS_Deltat(df['Score_std'], 
+                                                 df['DeltaT'], 5000)
+pred = np.exp(reg.predict(time_picks))
+plt.plot(time, df['Score_std'], '.')
+plt.plot(time_picks, pred, 'r-')
 
