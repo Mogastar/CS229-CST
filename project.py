@@ -271,7 +271,6 @@ def Reg_nS_Deltat(score, time):
     time_sorted = time.sort_values()
     time_sorted = time_sorted[time_sorted >= 0]
     score_sorted = score.reindex(time_sorted.index)
-    
 
 #    reg = linear_model.Ridge(alpha = .5)
 #    interc = np.ones(len(score))
@@ -370,8 +369,6 @@ if first_time:
 # Aggregate design matrix in sparse format
 val, row, col = aggregate_design(work_dir)
 y = np.array(df['IsAcceptedAnswer'], dtype = int)
-sparse_X = scipy.sparse.coo_matrix((val, (row, col)), 
-                                   shape = (len(y), len(voc)))
 
 # Separate datasets
 val_temp, row_temp, col_temp, y_temp, val_test, row_test, col_test, y_test = \
