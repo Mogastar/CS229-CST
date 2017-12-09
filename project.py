@@ -434,7 +434,7 @@ print(accuracy_BNB)
 
 reg, score_log, time_picks, time_sorted, score_sorted = Reg_nS_Deltat(df['Score_std'], df['DeltaT'], 5000)
 pred = np.exp(reg.predict(time_picks))
-plt.plot(time_sorted, score_sorted, 'x')
+plt.plot(time_sorted, score_sorted, 'o')
 plt.plot(time_picks, pred, 'r-')
 plt.plot(time_picks, np.zeros(pred.shape), 'k-')
 plt.axis([-0.1e8, 3e8, -1, 6])
