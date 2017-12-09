@@ -17,6 +17,8 @@ from collections import Counter
 from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn import linear_model
+from numpy import inf
+
 
 #os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
 
@@ -270,13 +272,32 @@ def Reg_nS_Deltat(score, time):
     time = time.dt.total_seconds()
     time_sorted = time.sort_values()
     time_sorted = time_sorted[time_sorted >= 0]
+    ind_sorted  = time_sorted.index.values # indices as numpy array
     score_sorted = score.reindex(time_sorted.index)
+    score_sorted = score_sorted.values     # sorted scores as numpy array
+    
+    time_sorted_log = time_sorted.apply(np.log10)
+    time_sorted_log[time_sorted_log == -inf] = 0
+    time_sorted_log[time_sorted_log == inf] = 0 # sorted time as numpy array
+    
+    score_quantile = np.array_split(score_sorted, 1012)
+    ind_quantile   = np.array_split(ind_sorted, 1012)
+    
+    time_picks = np.zeros(1012);
+    score_picks = np.zeros(1012);
 
-#    reg = linear_model.Ridge(alpha = .5)
-#    interc = np.ones(len(score))
-#    X = np.column_stack((interc, score))
-#    reg.fit(X, time)
-    return time_sorted
+    for i in range(1012):
+        score_picks[i] = np.max(score_quantile[i])
+        indices        = ind_quantile[i]
+        ind_max        = indices[np.argmax(score_quantile[i])]
+        time_picks[i]  = time_sorted.loc[ind_max]
+        
+    score_picks_log = np.log(score_picks)
+    
+    reg = linear_model.LinearRegression()
+    reg.fit(time_picks.reshape(time_picks.shape[0], 1), 
+            score_picks_log.reshape(score_picks_log.shape[0], 1))
+    return reg
 
 
 def separate(val, row, col, y, test_size, seed = 0):
@@ -415,4 +436,5 @@ TRA = MNB.predict(X_train)
 accuracy = np.mean(TRA == y_train)
 print(accuracy)
 
-sorted_time = Reg_nS_Deltat(df['Score_std'], df['DeltaT'])
+reg = Reg_nS_Deltat(df['Score_std'], df['DeltaT'])
+
