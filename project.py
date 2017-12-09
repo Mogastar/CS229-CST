@@ -274,7 +274,6 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     time_sorted = time.sort_values()
     time_sorted = time_sorted[time_sorted >= 0]
     ind_sorted  = time_sorted.index.values # indices as numpy array
-    time = time.index.values
     score_sorted = score.reindex(time_sorted.index)
     score_sorted = score_sorted.values     # sorted scores as numpy array
     
@@ -300,7 +299,7 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     return reg, score_picks_log, time_picks, time
 
 
-def separate(val, row, col, y, test_size, seed = 0):
+def separate(val, row, col, y_list, test_size, seed = 0):
     '''
     Separate a sparse matrix in COO format and a vector y into 2 sets
         - set 0 of size (1 - test_size) %
@@ -308,7 +307,7 @@ def separate(val, row, col, y, test_size, seed = 0):
     '''
     
     # Separate indices
-    ind = np.arange(len(y))
+    ind = np.arange(len(y_list[0]))
     ind0, ind1 = sk.model_selection.train_test_split(ind, 
                                                      test_size = test_size, 
                                                      random_state = seed)
@@ -346,10 +345,13 @@ def separate(val, row, col, y, test_size, seed = 0):
     col1 = np.array(f1(col))
     
     # Separate y
-    y0 = y[ind0]
-    y1 = y[ind1]
+    y_list0 = []
+    y_list1 = []
+    for y in y_list:
+        y_list0.append(y[ind0])
+        y_list1.append(y[ind1])
     
-    return val0, row0, col0, y0, val1, row1, col1, y1
+    return val0, row0, col0, y_list0, val1, row1, col1, y_list1
 
 
 '''
@@ -389,24 +391,34 @@ if first_time:
         
 # Aggregate design matrix in sparse format
 val, row, col = aggregate_design(work_dir)
-y = np.array(df['IsAcceptedAnswer'], dtype = int)
+
+# Vectors to split
+accepted = np.array(df['IsAcceptedAnswer'], dtype = int)
+deltaT_s = np.array(df['DeltaT'].dt.total_seconds())
+y_list = [accepted, deltaT_s]
 
 # Separate datasets
-val_temp, row_temp, col_temp, y_temp, val_test, row_test, col_test, y_test = \
-    separate(val, row, col, y, test_size = 0.01)
-val_train, row_train, col_train, y_train, val_cv, row_cv, col_cv, y_cv = \
-    separate(val_temp, row_temp, col_temp, y_temp, test_size = 0.1)
-del val_temp, row_temp, col_temp, y_temp
+val_temp, row_temp, col_temp, y_list_temp, val_test, row_test, col_test, y_list_test = \
+    separate(val, row, col, y_list, test_size = 0.01)
+val_train, row_train, col_train, y_list_train, val_cv, row_cv, col_cv, y_list_cv = \
+    separate(val_temp, row_temp, col_temp, y_list_temp, test_size = 0.1)
+del val_temp, row_temp, col_temp, y_list_temp
 
 # Construct sparse matrices
+accepted_train = y_list_train[0]
+deltaT_s_train = y_list_train[1]
 X_train = scipy.sparse.coo_matrix((val_train, (row_train, col_train)),
-                                  shape = (len(y_train), len(voc)))
+                                  shape = (len(accepted_train), len(voc)))
 del val_train, row_train, col_train
+accepted_cv = y_list_cv[0]
+deltaT_s_cv = y_list_cv[1]
 X_cv = scipy.sparse.coo_matrix((val_cv, (row_cv, col_cv)),
-                                  shape = (len(y_cv), len(voc)))
+                                  shape = (len(accepted_cv), len(voc)))
 del val_cv, row_cv, col_cv
+accepted_test = y_list_test[0]
+deltaT_s_test = y_list_test[1]
 X_test = scipy.sparse.coo_matrix((val_test, (row_test, col_test)),
-                                 shape = (len(y_test), len(voc)))
+                                 shape = (len(accepted_test), len(voc)))
 del val_test, row_test, col_test
 
 
@@ -420,22 +432,25 @@ Tests
 # Tests
 
 MNB = MultinomialNB()
-MNB.fit(X_train, y_train)
+MNB.fit(X_train, accepted_train)
 y_MNB = MNB.predict(X_cv)
 proba_MNB = MNB.predict_proba(X_cv)
-accuracy_MNB = np.mean(y_MNB == y_cv)
+accuracy_MNB = np.mean(y_MNB == accepted_cv)
 print(accuracy_MNB)
 
 BNB = BernoulliNB()
-BNB.fit(X_train, y_train)
+BNB.fit(X_train, accepted_train)
 y_BNB = BNB.predict(X_cv)
 proba_BNB = BNB.predict_proba(X_cv)
-accuracy_BNB = np.mean(y_BNB == y_cv)
+accuracy_BNB = np.mean(y_BNB == accepted_cv)
 print(accuracy_BNB)
 
 reg, score_log, time_picks, time = Reg_nS_Deltat(df['Score_std'], 
                                                  df['DeltaT'], 5000)
 pred = np.exp(reg.predict(time_picks))
-plt.plot(df['DeltaT'].dt.total_seconds(), df['Score_std'], '.')
+plt.plot(time, df['Score_std'], '.')
 plt.plot(time_picks, pred, 'r-')
+
+enveloppe_cv = reg.predict(deltaT_s_cv.reshape(len(deltaT_s_cv), 1))
+
 
