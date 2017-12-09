@@ -435,6 +435,6 @@ print(accuracy_BNB)
 reg, score_log, time_picks, time = Reg_nS_Deltat(df['Score_std'], 
                                                  df['DeltaT'], 5000)
 pred = np.exp(reg.predict(time_picks))
-plt.plot(time, df['Score_std'], '.')
+plt.plot(df['DeltaT'].dt.total_seconds(), df['Score_std'], '.')
 plt.plot(time_picks, pred, 'r-')
 
