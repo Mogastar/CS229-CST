@@ -296,7 +296,7 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     reg = linear_model.LinearRegression()
     reg.fit(time_picks, score_picks_log)
     
-    return reg, score_picks_log, time_picks, time
+    return reg, score_picks_log, time_picks, time_sorted, score_sorted
 
 
 def separate(val, row, col, y_list, test_size, seed = 0):
@@ -445,11 +445,18 @@ proba_BNB = BNB.predict_proba(X_cv)
 accuracy_BNB = np.mean(y_BNB == accepted_cv)
 print(accuracy_BNB)
 
-reg, score_log, time_picks, time = Reg_nS_Deltat(df['Score_std'], 
-                                                 df['DeltaT'], 5000)
+reg, score_log, time_picks, time_sorted, score_sorted = Reg_nS_Deltat(df['Score_std'], df['DeltaT'], 5000)
 pred = np.exp(reg.predict(time_picks))
-plt.plot(time, df['Score_std'], '.')
+plt.plot(time_sorted, score_sorted, 'x')
 plt.plot(time_picks, pred, 'r-')
+plt.plot(time_picks, np.zeros(pred.shape), 'k-')
+plt.axis([-0.1e8, 3e8, -1, 6])
+plt.axhline(0, color='black')
+plt.axvline(0, color='black')
+plt.xlabel('Time difference (in seconds)')
+plt.ylabel('Standardized score')
+plt.title('Regression on time difference and standardized score')
+plt.savefig("regression_Time_Score.png", dpi=1200)
 
 enveloppe_cv = reg.predict(deltaT_s_cv.reshape(len(deltaT_s_cv), 1))
 
