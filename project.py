@@ -491,3 +491,8 @@ value_test = y_test[:, 0]
 
 ## Guassian discriminant analysis
 
+GDA = GaussianDA(data_train[:, :2], value_train, "Linear")
+value_pred = GDA.predict(data_cv[:, :2])
+accuracy = np.mean(value_pred == value_cv)
+print(accuracy)
+
