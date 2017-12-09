@@ -265,7 +265,7 @@ def stemming(word_stream, word_files = []):
     return dict_count
 
 
-def Reg_nS_Deltat(score, time):
+def Reg_nS_Deltat(score, time, nbins = 1000):
     '''
     Running regression on DeltaT and Score_std
     '''
@@ -276,28 +276,25 @@ def Reg_nS_Deltat(score, time):
     score_sorted = score.reindex(time_sorted.index)
     score_sorted = score_sorted.values     # sorted scores as numpy array
     
-    time_sorted_log = time_sorted.apply(np.log10)
-    time_sorted_log[time_sorted_log == -inf] = 0
-    time_sorted_log[time_sorted_log == inf] = 0 # sorted time as numpy array
+    score_quantile = np.array_split(score_sorted, nbins)
+    ind_quantile   = np.array_split(ind_sorted, nbins)
     
-    score_quantile = np.array_split(score_sorted, 1012)
-    ind_quantile   = np.array_split(ind_sorted, 1012)
-    
-    time_picks = np.zeros(1012);
-    score_picks = np.zeros(1012);
+    time_picks = np.zeros(nbins);
+    score_picks = np.zeros(nbins);
 
-    for i in range(1012):
+    for i in range(nbins):
         score_picks[i] = np.max(score_quantile[i])
         indices        = ind_quantile[i]
         ind_max        = indices[np.argmax(score_quantile[i])]
         time_picks[i]  = time_sorted.loc[ind_max]
-        
-    score_picks_log = np.log(score_picks)
+    
+    score_picks[score_picks < 1e-5] = 1e-5    
+    score_picks_log = np.log(score_picks).reshape(len(score_picks), 1)
+    time_picks = time_picks.reshape(len(time_picks), 1)
     
     reg = linear_model.LinearRegression()
-    reg.fit(time_picks.reshape(time_picks.shape[0], 1), 
-            score_picks_log.reshape(score_picks_log.shape[0], 1))
-    return reg
+    reg.fit(time_picks, score_picks_log)
+    return reg, score_picks_log, time_picks
 
 
 def separate(val, row, col, y, test_size, seed = 0):
@@ -436,5 +433,12 @@ TRA = MNB.predict(X_train)
 accuracy = np.mean(TRA == y_train)
 print(accuracy)
 
-reg = Reg_nS_Deltat(df['Score_std'], df['DeltaT'])
+score = df['Score_std']
+time = df['DeltaT']
+
+reg, score_log, time = Reg_nS_Deltat(df['Score_std'], df['DeltaT'], 5000)
+time_days = np.to_datetime(time)
+pred = np.exp(reg.predict(time))
+plt.plot(df['DeltaT'], df['Score_std'], '.')
+plt.plot(time, pred, 'r-')
 
