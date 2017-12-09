@@ -274,6 +274,7 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     time_sorted = time.sort_values()
     time_sorted = time_sorted[time_sorted >= 0]
     ind_sorted  = time_sorted.index.values # indices as numpy array
+    time = time.index.values
     score_sorted = score.reindex(time_sorted.index)
     score_sorted = score_sorted.values     # sorted scores as numpy array
     
