@@ -464,3 +464,7 @@ plt.ylabel('Standardized score')
 plt.title('Regression on time difference and standardized score')
 plt.savefig("regression_Time_Score.png", dpi=1200)
 
+## Guassian discriminant analysis
+
+
+
