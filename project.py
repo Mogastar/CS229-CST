@@ -18,6 +18,8 @@ from nltk.tokenize import sent_tokenize, word_tokenize
 from sklearn.naive_bayes import BernoulliNB, MultinomialNB
 from sklearn import linear_model
 from numpy import inf
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis
 
 
 #os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
@@ -298,6 +300,20 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     
     return reg, score_picks_log, time_picks, time_sorted, score_sorted
 
+def GaussianDA(X, y, analysis_type):
+    '''
+    The Gaussian Discriminant Analysis model
+    '''
+
+    if (analysis_type == "Linear"):
+        GDA = LinearDiscriminantAnalysis()
+    else:
+        GDA = QuadraticDiscriminantAnalysis()
+
+    GDA.fit(X, y)
+    return GDA
+
+
 
 def separate(val, row, col, y, test_size, seed = 0):
     '''
@@ -432,9 +448,12 @@ proba_BNB = BNB.predict_proba(X_cv)
 accuracy_BNB = np.mean(y_BNB == y_cv)
 print(accuracy_BNB)
 
+
+## Regression on time difference and standardized score
+
 reg, score_log, time_picks, time_sorted, score_sorted = Reg_nS_Deltat(df['Score_std'], df['DeltaT'], 5000)
 pred = np.exp(reg.predict(time_picks))
-plt.plot(time_sorted, score_sorted, 'o')
+plt.plot(time_sorted, score_sorted, '.', markersize = 3)
 plt.plot(time_picks, pred, 'r-')
 plt.plot(time_picks, np.zeros(pred.shape), 'k-')
 plt.axis([-0.1e8, 3e8, -1, 6])
