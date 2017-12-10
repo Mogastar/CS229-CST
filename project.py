@@ -31,6 +31,7 @@ from matplotlib import cm
 from sklearn.multiclass import OneVsRestClassifier
 import matplotlib as mpl
 import sys
+from matplotlib import colors
 
 
 #os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
@@ -402,8 +403,10 @@ def separate(val, row, col, y, test_size, seed = 0):
     
     return val0, row0, col0, y0, val1, row1, col1, y1
 
-
 def plot_ellipse(splot, mean, cov, color):
+    '''
+    Plotting ellipses for Normal distributions
+    '''
     v, w = np.linalg.eigh(cov)
     u = w[0] / np.linalg.norm(w[0])
     angle = np.arctan(u[1] / u[0])
@@ -587,28 +590,51 @@ print("Random Forest Classifier with Cross Validation: {0:.2f}%".format(100*accu
 
 ## Plotting Gaussian discriminant analysis
 
+
+
+GDA = GaussianDA(data_train[:, [1, 2]], value_train, "Linear")
+value_pred = GDA.predict(data_cv[:, [1, 2]])
+accuracy = np.mean(value_pred == value_cv)
+print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*accuracy))
+
 plotGDA = plt.subplot()
 plt.xlabel('X label')
 plt.ylabel('Y label')
-plt.plot(data_cv[value_cv == 0, [1]], data_cv[value_cv == 0, [2]], 'r.')
-plt.plot(data_cv[value_cv == 1, [1]], data_cv[value_cv == 1, [2]], 'b.')
-#plot_ellipse(plotGDA, GDA.means_[0], GDA.covariance_, 'red')
-#plot_ellipse(plotGDA, GDA.means_[1], GDA.covariance_, 'blue')
-plt.savefig("test.png", dpi = 1200)
+plt.plot(data_cv[value_cv == 0, [1]], data_cv[value_cv == 0, [2]], 
+         'r.', markersize = 3)
+plt.plot(data_cv[value_cv == 1, [1]], data_cv[value_cv == 1, [2]],
+         'b.', markersize = 3)
+#plt.contour()
+plt.plot(GDA.means_[0, 0], GDA.means_[0, 1], 'k.', markersize = 15)
+plt.plot(GDA.means_[1, 0], GDA.means_[1, 1], 'k.', markersize = 15)
+plot_ellipse(plotGDA, GDA.means_[0], GDA.covariance_, 'red')
+plot_ellipse(plotGDA, GDA.means_[1], GDA.covariance_, 'blue')
+plt.xlim(0.5, 1.1)
+plt.ylim(0.0, 2.1)
+nx, ny = 200, 100
+xx, yy = np.meshgrid(np.linspace(0.5, 1.1, nx),
+                     np.linspace(0.0, 2.1, ny))
+Z = GDA.predict_proba(np.c_[xx.ravel(), yy.ravel()])
+Z = Z[:, 1].reshape(xx.shape)
+plt.pcolormesh(xx, yy, Z, cmap='red_blue_classes',
+               norm=colors.Normalize(0., 1.))
+plt.contour(xx, yy, Z, [0.5], linewidths=2., colors='k')
+plt.savefig("GDA.png", dpi=1200)
 plt.show()
+
 
 # ROC
 
-classifier = OneVsRestClassifier(GDA)
-y_score = classifier.fit(data_train[:, [1, 2]], 
-                         value_train).decision_function(data_cv[:, [1, 2]])
-fpr = dict()
-tpr = dict()
-roc_auc = dict()
-for i in range(2):
-    fpr[i], tpr[i], _ = roc_curve(value_cv[:, i], y_score[:, i])
-    roc_auc[i] = auc(fpr[i], tpr[i])
-
-# Compute micro-average ROC curve and ROC area
-fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
-roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+#classifier = OneVsRestClassifier(GDA)
+#y_score = classifier.fit(data_train[:, [1, 2]], 
+#                         value_train).decision_function(data_cv[:, [1, 2]])
+#fpr = dict()
+#tpr = dict()
+#roc_auc = dict()
+#for i in range(2):
+#    fpr[i], tpr[i], _ = roc_curve(value_cv[:, i], y_score[:, i])
+#    roc_auc[i] = auc(fpr[i], tpr[i])
+#
+## Compute micro-average ROC curve and ROC area
+#fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
+#roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
