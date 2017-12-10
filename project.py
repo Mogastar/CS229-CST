@@ -546,8 +546,8 @@ value_test = y_test[:, 0]
 
 GDA = GaussianDA(data_train[:, [1, 2]], value_train, "Linear")
 value_pred = GDA.predict(data_cv[:, [1, 2]])
-accuracy = np.mean(value_pred == value_cv)
-print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*accuracy))
+GDA_accuracy = np.mean(value_pred == value_cv)
+print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*GDA_accuracy))
 
 LRM = Logistic_Regres(data_train[:, [0, 2, 3]], value_train)
 value_pred = LRM.predict(data_cv[:, [0, 2, 3]])
@@ -572,16 +572,22 @@ print("Random Forest Classifier with Cross Validation: {0:.2f}%".format(100*accu
 
 GDA = GaussianDA(data_train[:, [1, 2]], value_train, "Linear")
 value_pred = GDA.predict(data_cv[:, [1, 2]])
-accuracy = np.mean(value_pred == value_cv)
-print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*accuracy))
+GDA_accuracy = np.mean(value_pred == value_cv)
+print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*GDA_accuracy))
 
 plotGDA = plt.subplot()
-plt.xlabel('X label')
-plt.ylabel('Y label')
+cmap = colors.LinearSegmentedColormap(
+    'red_blue_classes',
+    {'red': [(0, 1, 1), (1, 0.7, 0.7)],
+     'green': [(0, 0.7, 0.7), (1, 0.7, 0.7)],
+     'blue': [(0, 0.7, 0.7), (1, 1, 1)]})
+plt.cm.register_cmap(cmap=cmap)
+plt.xlabel('Naive Bayes Estimators')
+plt.ylabel('Exponential of negative time difference')
 plt.plot(data_cv[value_cv == 0, [1]], data_cv[value_cv == 0, [2]], 
-         'r.', markersize = 3)
+         'r.', markersize = 3, label = 'Unaccepted answers')
 plt.plot(data_cv[value_cv == 1, [1]], data_cv[value_cv == 1, [2]],
-         'b.', markersize = 3)
+         'b.', markersize = 3, label = 'Accepted answers')
 #plt.contour()
 plt.plot(GDA.means_[0, 0], GDA.means_[0, 1], 'k.', markersize = 15)
 plt.plot(GDA.means_[1, 0], GDA.means_[1, 1], 'k.', markersize = 15)
@@ -590,12 +596,15 @@ plot_ellipse(plotGDA, GDA.means_[1], GDA.covariance_, 'blue')
 plt.xlim(0.5, 1.1)
 plt.ylim(0.0, 2.1)
 nx, ny = 200, 100
-xx, yy = np.meshgrid(np.linspace(0.5, 1.1, nx),
-                     np.linspace(0.0, 2.1, ny))
+x_min, x_max = plt.xlim()
+y_min, y_max = plt.ylim()
+xx, yy = np.meshgrid(np.linspace(x_min, x_max, nx),
+                     np.linspace(y_min, y_max, ny))
 Z = GDA.predict_proba(np.c_[xx.ravel(), yy.ravel()])
 Z = Z[:, 1].reshape(xx.shape)
 plt.pcolormesh(xx, yy, Z, cmap='red_blue_classes',
                norm=colors.Normalize(0., 1.))
-plt.contour(xx, yy, Z, [0.5], linewidths=2., colors='k')
+plt.contour(xx, yy, Z, [1-GDA_accuracy], linewidths=2., colors='k')
+plt.legend(loc='upper left')
 plt.savefig("GDA.png", dpi=1200)
 plt.show()
