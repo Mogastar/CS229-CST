@@ -28,6 +28,7 @@ from scipy.stats import randint as sp_randint
 from sklearn.ensemble import RandomForestClassifier
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
+from sklearn.multiclass import OneVsRestClassifier
 import matplotlib as mpl
 import sys
 from matplotlib import colors
@@ -290,6 +291,8 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     score_sorted = score.reindex(time_sorted.index)
     score_sorted = score_sorted.values     # sorted scores as numpy array
     
+    _, time_bins = pd.qcut(time_sorted, nbins, retbins = True, 
+                           duplicates = "drop")
     score_quantile = np.array_split(score_sorted, nbins)
     ind_quantile   = np.array_split(ind_sorted, nbins)
     
@@ -309,7 +312,7 @@ def Reg_nS_Deltat(score, time, nbins = 1000, tol = 1e-5):
     reg = linear_model.LinearRegression()
     reg.fit(time_picks, score_picks_log)
     
-    return reg, score_picks_log, time_picks, time_sorted, score_sorted
+    return reg, score_picks_log, time_picks, time_sorted, score_sorted, time_bins
 
 
 def GaussianDA(X, y, analysis_type):
@@ -416,6 +419,9 @@ def plot_ellipse(splot, mean, cov, color):
     ell.set_clip_box(splot.bbox)
     ell.set_alpha(0.5)
     splot.add_artist(ell)
+    splot.set_xticks(())
+    splot.set_yticks(())
+    
 
 '''
 ###############################################################################
@@ -511,7 +517,7 @@ proba_NB_test = np.max(NB.predict_proba(X_test), axis = 1)
 
 # Regression on time difference and standardized score
 
-reg, score_log, time_picks, time_sorted, score_sorted = \
+reg, score_log, time_picks, time_sorted, score_sorted, bins = \
     Reg_nS_Deltat(df['Score_std'], df['DeltaT'], 5000)
 pred = np.exp(reg.predict(time_picks))
 plt.plot(time_sorted, score_sorted, '.', markersize = 3)
@@ -523,7 +529,16 @@ plt.axvline(0, color='black')
 plt.xlabel('Time difference (in seconds)')
 plt.ylabel('Standardized score')
 plt.title('Regression on time difference and standardized score')
-plt.savefig("regression_Time_Score.png", dpi=1200)
+#plt.savefig("regression_Time_Score.png", dpi=1200)
+
+# Time bins
+
+time_bin_train = pd.cut(y_train[:, 1], bins, labels = False,
+                        include_lowest = True)
+time_bin_cv = pd.cut(y_cv[:, 1], bins, labels = False,
+                        include_lowest = True)
+time_bin_test = pd.cut(y_test[:, 1], bins, labels = False,
+                        include_lowest = True)
 
 # Logistic regression
 
@@ -532,15 +547,22 @@ envlp_cv = np.exp(reg.predict(y_cv[:, 1].reshape(y_cv.shape[0], 1)))
 envlp_test = np.exp(reg.predict(y_test[:, 1].reshape(y_test.shape[0], 1)))
 
 data_train = np.stack((pred_NB_train, proba_NB_train, 
-                       envlp_train.flatten(), y_train[:, 2]), axis = 1)
+                       envlp_train.flatten(), y_train[:, 2],
+                       time_bin_train), axis = 1)
 data_cv = np.stack((pred_NB_cv, proba_NB_cv, 
-                    envlp_cv.flatten(), y_cv[:, 2]), axis = 1)
+                    envlp_cv.flatten(), y_cv[:, 2],
+                    time_bin_cv), axis = 1)
 data_test = np.stack((pred_NB_test, proba_NB_test, 
-                      envlp_test.flatten(), y_test[:, 2]), axis = 1)
+                      envlp_test.flatten(), y_test[:, 2],
+                      time_bin_test), axis = 1)
 
 value_train = y_train[:, 0]
 value_cv = y_cv[:, 0]
 value_test = y_test[:, 0]
+
+plt.plot(data_train[value_train == 0, 1], data_train[value_train == 0, 4], "r.")
+plt.plot(data_train[value_train == 1, 1], data_train[value_train == 1, 4], "b.")
+plt.show()
 
 ## Guassian discriminant analysis
 
@@ -608,3 +630,20 @@ plt.contour(xx, yy, Z, [1-GDA_accuracy], linewidths=2., colors='k')
 plt.legend(loc='upper left')
 plt.savefig("GDA.png", dpi=1200)
 plt.show()
+
+
+# ROC
+
+#classifier = OneVsRestClassifier(GDA)
+#y_score = classifier.fit(data_train[:, [1, 2]], 
+#                         value_train).decision_function(data_cv[:, [1, 2]])
+#fpr = dict()
+#tpr = dict()
+#roc_auc = dict()
+#for i in range(2):
+#    fpr[i], tpr[i], _ = roc_curve(value_cv[:, i], y_score[:, i])
+#    roc_auc[i] = auc(fpr[i], tpr[i])
+#
+## Compute micro-average ROC curve and ROC area
+#fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
+#roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
