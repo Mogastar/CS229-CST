@@ -533,6 +533,7 @@ plt.title('Regression on time difference and standardized score')
 
 # Time bins
 
+bins[-1] = inf
 time_bin_train = pd.cut(y_train[:, 1], bins, labels = False,
                         include_lowest = True)
 time_bin_cv = pd.cut(y_cv[:, 1], bins, labels = False,
@@ -631,6 +632,13 @@ plt.legend(loc='upper left')
 plt.savefig("GDA.png", dpi=1200)
 plt.show()
 
+
+# Changed GDA
+
+GDA_mod = GaussianDA(data_train[:, [1, 4]], value_train, "Linear")
+value_pred = GDA_mod.predict(data_cv[:, [1, 4]])
+GDA_mod_accuracy = np.mean(value_pred == value_cv)
+print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*GDA_mod_accuracy))
 
 # ROC
 
