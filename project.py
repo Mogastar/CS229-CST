@@ -92,7 +92,6 @@ def process_data(df0, threshold = 3):
     
     # DeltaT between question and answer dates
     df['DeltaT'] = df['CreationDate_answers'] - df['CreationDate_questions']
-    
     # Length of the answer and question bodies
     df['Bodylength_answers'] = [len(body) for body in df['Body_answers']]
     df['Bodylength_questions'] = [len(body) for body in df['Body_questions']]
@@ -535,11 +534,11 @@ plt.title('Regression on time difference and standardized score')
 
 bins[-1] = inf
 time_bin_train = pd.cut(y_train[:, 1], bins, labels = False,
-                        include_lowest = True)
+                        include_lowest = True) / 5000
 time_bin_cv = pd.cut(y_cv[:, 1], bins, labels = False,
-                        include_lowest = True)
+                        include_lowest = True) / 5000
 time_bin_test = pd.cut(y_test[:, 1], bins, labels = False,
-                        include_lowest = True)
+                        include_lowest = True) / 5000
 
 # Logistic regression
 
