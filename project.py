@@ -26,7 +26,10 @@ from sklearn.model_selection import RandomizedSearchCV
 from sklearn import svm
 from scipy.stats import randint as sp_randint
 from sklearn.ensemble import RandomForestClassifier
-
+from mpl_toolkits.mplot3d import axes3d
+from matplotlib import cm
+import matplotlib as mpl
+import sys
 
 
 #os.chdir('E:\Stanford\Courses\CS 229\Project\CS229-CST')
@@ -314,9 +317,9 @@ def GaussianDA(X, y, analysis_type):
     '''
 
     if (analysis_type == "Linear"):
-        GDA = LinearDiscriminantAnalysis()
+        GDA = LinearDiscriminantAnalysis(solver = "svd", store_covariance=True)
     else:
-        GDA = QuadraticDiscriminantAnalysis()
+        GDA = QuadraticDiscriminantAnalysis(store_covariance=True)
 
     GDA.fit(X, y)
     return GDA
@@ -396,6 +399,22 @@ def separate(val, row, col, y, test_size, seed = 0):
     
     return val0, row0, col0, y0, val1, row1, col1, y1
 
+
+def plot_ellipse(splot, mean, cov, color):
+    v, w = np.linalg.eigh(cov)
+    u = w[0] / np.linalg.norm(w[0])
+    angle = np.arctan(u[1] / u[0])
+    angle = 180 * angle / np.pi  # convert to degrees
+    # filled Gaussian at 2 standard deviation
+    ell = mpl.patches.Ellipse(mean, 2 * v[0] ** 0.5, 2 * v[1] ** 0.5,
+                              180 + angle, facecolor=color,
+                              edgecolor='yellow',
+                              linewidth=2, zorder=2)
+    ell.set_clip_box(splot.bbox)
+    ell.set_alpha(0.5)
+    splot.add_artist(ell)
+    splot.set_xticks(())
+    splot.set_yticks(())
 
 '''
 ###############################################################################
@@ -524,8 +543,8 @@ value_test = y_test[:, 0]
 
 ## Guassian discriminant analysis
 
-GDA = GaussianDA(data_train[:, [1, 2, 3]], value_train, "Linear")
-value_pred = GDA.predict(data_cv[:, [1, 2, 3]])
+GDA = GaussianDA(data_train[:, [1, 2]], value_train, "Linear")
+value_pred = GDA.predict(data_cv[:, [1, 2]])
 accuracy = np.mean(value_pred == value_cv)
 print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*accuracy))
 
@@ -546,3 +565,16 @@ accuracy = np.mean(value_pred == value_cv)
 print("Random Forest Classifier with Cross Validation: {0:.2f}%".format(100*accuracy))
 
 
+## Plotting Gaussian discriminant analysis
+
+plotGDA = plt.subplot()
+plt.xlabel('X label')
+plt.ylabel('Y label')
+plt.plot(data_cv[value_cv == 0, [1]], np.log(data_cv[value_cv == 0, [2]]), 
+         'r.')
+plt.plot(data_cv[value_cv == 1, [1]], np.log(data_cv[value_cv == 1, [2]]),
+         'b.')
+
+plot_ellipse(plotGDA, GDA.means_[0], GDA.covariance_, 'red')
+plot_ellipse(plotGDA, GDA.means_[1], GDA.covariance_, 'blue')
+plt.show()
