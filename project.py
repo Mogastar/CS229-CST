@@ -604,8 +604,6 @@ print("Random Forest Classifier with Cross Validation: {0:.2f}%".format(100*accu
 
 ## Plotting Gaussian discriminant analysis
 
-
-
 GDA = GaussianDA(data_train[:, [1, 2]], value_train, "Linear")
 value_pred = GDA.predict(data_cv[:, [1, 2]])
 GDA_accuracy = np.mean(value_pred == value_cv)
@@ -624,13 +622,14 @@ plt.plot(data_cv[value_cv == 0, [1]], data_cv[value_cv == 0, [2]],
          'r.', markersize = 3, label = 'Unaccepted answers')
 plt.plot(data_cv[value_cv == 1, [1]], data_cv[value_cv == 1, [2]],
          'b.', markersize = 3, label = 'Accepted answers')
-#plt.contour()
 plt.plot(GDA.means_[0, 0], GDA.means_[0, 1], 'k.', markersize = 15)
 plt.plot(GDA.means_[1, 0], GDA.means_[1, 1], 'k.', markersize = 15)
 plot_ellipse(plotGDA, GDA.means_[0], GDA.covariance_, 'red')
 plot_ellipse(plotGDA, GDA.means_[1], GDA.covariance_, 'blue')
 plt.xlim(0.5, 1.1)
 plt.ylim(0.0, 2.1)
+plt.xticks(0.5 + 0.25*np.arange(3))
+plt.yticks(0.25*np.arange(7))
 nx, ny = 200, 100
 x_min, x_max = plt.xlim()
 y_min, y_max = plt.ylim()
@@ -642,6 +641,7 @@ plt.pcolormesh(xx, yy, Z, cmap='red_blue_classes',
                norm=colors.Normalize(0., 1.))
 plt.contour(xx, yy, Z, [1-GDA_accuracy], linewidths=2., colors='k')
 plt.legend(loc='upper left')
+plt.title('Gaussian Discriminant Analysis before normalization')
 plt.savefig("GDA.png", dpi=1200)
 plt.show()
 
@@ -651,6 +651,42 @@ GDA_mod = GaussianDA(data_train[:, [1, 4]], value_train, "Linear")
 value_pred = GDA_mod.predict(data_cv[:, [1, 4]])
 GDA_mod_accuracy = np.mean(value_pred == value_cv)
 print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*GDA_mod_accuracy))
+
+plotGDA_mod = plt.subplot()
+cmap = colors.LinearSegmentedColormap(
+    'red_blue_classes',
+    {'red': [(0, 1, 1), (1, 0.7, 0.7)],
+     'green': [(0, 0.7, 0.7), (1, 0.7, 0.7)],
+     'blue': [(0, 0.7, 0.7), (1, 1, 1)]})
+plt.cm.register_cmap(cmap=cmap)
+plt.xlabel('Naive Bayes Estimators')
+plt.ylabel('Quantile of time difference')
+plt.plot(data_cv[value_cv == 0, [1]], data_cv[value_cv == 0, [4]], 
+         'r.', markersize = 3, label = 'Unaccepted answers')
+plt.plot(data_cv[value_cv == 1, [1]], data_cv[value_cv == 1, [4]],
+         'b.', markersize = 3, label = 'Accepted answers')
+plt.plot(GDA_mod.means_[0, 0], GDA_mod.means_[0, 1], 'k.', markersize = 15)
+plt.plot(GDA_mod.means_[1, 0], GDA_mod.means_[1, 1], 'k.', markersize = 15)
+plot_ellipse(plotGDA_mod, GDA_mod.means_[0], GDA_mod.covariance_, 'red')
+plot_ellipse(plotGDA_mod, GDA_mod.means_[1], GDA_mod.covariance_, 'blue')
+plt.xlim(0.49, 1.065)
+plt.ylim(0.0, 1.015)
+plt.xticks(0.5 + 0.25*np.arange(3))
+plt.yticks(0.25*np.arange(5))
+nx, ny = 200, 100
+x_min, x_max = plt.xlim()
+y_min, y_max = plt.ylim()
+xx, yy = np.meshgrid(np.linspace(x_min, x_max, nx),
+                     np.linspace(y_min, y_max, ny))
+Z = GDA_mod.predict_proba(np.c_[xx.ravel(), yy.ravel()])
+Z = Z[:, 1].reshape(xx.shape)
+plt.pcolormesh(xx, yy, Z, cmap='red_blue_classes',
+               norm=colors.Normalize(0., 1.))
+plt.contour(xx, yy, Z, [1-GDA_mod_accuracy], linewidths=2., colors='k')
+plt.legend(loc='upper left')
+plt.title('Gaussian Discriminant Analysis')
+plt.savefig("GDA_mod.png", dpi=1200)
+plt.show()
 
 # ROC
 
