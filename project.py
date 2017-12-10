@@ -645,7 +645,6 @@ plt.legend(loc='upper left')
 plt.savefig("GDA.png", dpi=1200)
 plt.show()
 
-
 # Changed GDA
 
 GDA_mod = GaussianDA(data_train[:, [1, 4]], value_train, "Linear")
