@@ -29,8 +29,10 @@ from sklearn.ensemble import RandomForestClassifier
 from mpl_toolkits.mplot3d import axes3d
 from matplotlib import cm
 from sklearn.multiclass import OneVsRestClassifier
+from sklearn.preprocessing import label_binarize
 import matplotlib as mpl
 import sys
+from sklearn.metrics import roc_curve, auc
 from matplotlib import colors
 
 
@@ -505,6 +507,15 @@ else:
     NB = MultinomialNB()
 NB.fit(X_train, y_train[:, 0])
 
+# Best words
+
+if first_time:
+    order = np.argsort(NB.coef_[0, :])
+    with open('I_have_the_best_words.txt', 'w') as f:
+        for i in range(200):
+            f.write(voc_list[a[-(i + 1)]])
+            f.write('\n')
+
 # Predictions 
 
 pred_NB_train = NB.predict(X_train)
@@ -680,16 +691,25 @@ plt.show()
 
 # ROC
 
-#classifier = OneVsRestClassifier(GDA)
-#y_score = classifier.fit(data_train[:, [1, 2]], 
-#                         value_train).decision_function(data_cv[:, [1, 2]])
-#fpr = dict()
-#tpr = dict()
-#roc_auc = dict()
-#for i in range(2):
-#    fpr[i], tpr[i], _ = roc_curve(value_cv[:, i], y_score[:, i])
-#    roc_auc[i] = auc(fpr[i], tpr[i])
-#
-## Compute micro-average ROC curve and ROC area
-#fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
-#roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+classifier = OneVsRestClassifier(GDA)
+y_score = classifier.fit(data_train[:, [1, 2]], 
+                         value_train).decision_function(data_cv[:, [1, 2]])
+fpr, tpr, _ = roc_curve(value_cv, y_score)
+roc_auc = auc(fpr, tpr)
+
+# Compute micro-average ROC curve and ROC area
+fpr["micro"], tpr["micro"], _ = roc_curve(value_cv.ravel(), y_score.ravel())
+roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+plt.figure()
+lw = 2
+plt.plot(fpr, tpr, color='darkorange',
+         lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+plt.xlim([0.0, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('Receiver operating characteristic example')
+plt.legend(loc="lower right")
+plt.show()
