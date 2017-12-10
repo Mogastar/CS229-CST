@@ -535,10 +535,13 @@ plt.title('Regression on time difference and standardized score')
 bins[-1] = inf
 time_bin_train = pd.cut(y_train[:, 1], bins, labels = False,
                         include_lowest = True) / 5000
+time_bin_train[np.isnan(time_bin_train)] = 0
 time_bin_cv = pd.cut(y_cv[:, 1], bins, labels = False,
                         include_lowest = True) / 5000
+time_bin_cv[np.isnan(time_bin_cv)] = 0
 time_bin_test = pd.cut(y_test[:, 1], bins, labels = False,
                         include_lowest = True) / 5000
+time_bin_test[np.isnan(time_bin_test)] = 0
 
 # Logistic regression
 
