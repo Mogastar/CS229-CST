@@ -688,27 +688,68 @@ plt.title('Gaussian Discriminant Analysis')
 plt.savefig("GDA_mod.png", dpi=1200)
 plt.show()
 
-# ROC
 
-classifier = OneVsRestClassifier(GDA)
-y_score = classifier.fit(data_train[:, [1, 2]], 
-                         value_train).decision_function(data_cv[:, [1, 2]])
-fpr, tpr, _ = roc_curve(value_cv, y_score)
-roc_auc = auc(fpr, tpr)
+'''
+###############################################################################
+ROC
+###############################################################################
+'''
 
-# Compute micro-average ROC curve and ROC area
-fpr["micro"], tpr["micro"], _ = roc_curve(value_cv.ravel(), y_score.ravel())
-roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+
+# Classifier
+
+clas_GDA = OneVsRestClassifier(GDA)
+clas_LRM = OneVsRestClassifier(LRM)
+clas_NN = OneVsRestClassifier(NN)
+clas_RFC = OneVsRestClassifier(RFC)
+clas_GDA_mod = OneVsRestClassifier(GDA_mod)
+
+# Score
+
+y_score_GDA = clas_GDA.fit(data_train[:, [1, 2]], 
+                           value_train).decision_function(data_cv[:, [1, 2]])
+y_score_LRM = clas_LRM.fit(data_train[:, [0, 2, 3]], 
+                           value_train).decision_function(data_cv[:, [0, 2, 3]])
+y_score_NN = clas_NN.fit(data_train[:, [0, 2, 3]], 
+                         value_train).decision_function(data_cv[:, [0, 2, 3]])
+y_score_RFC = clas_RFC.fit(data_train[:, [1, 2, 3]], 
+                           value_train).decision_function(data_cv[:, [1, 2, 3]])
+y_score_GDA_mod = clas_GDA_mod.fit(data_train[:, [1, 4]], 
+                                   value_train).decision_function(data_cv[:, [1, 4]])
+
+# Roc curve
+
+fpr_GDA, tpr_GDA, _ = roc_curve(value_cv, y_score_GDA)
+roc_auc_GDA = auc(fpr_GDA, tpr_GDA)
+fpr_LRM, tpr_LRM, _ = roc_curve(value_cv, y_score_LRM)
+roc_auc_LRM = auc(fpr_LRM, tpr_LRM)
+fpr_NN, tpr_NN, _ = roc_curve(value_cv, y_score_NN)
+roc_auc_NN = auc(fpr_NN, tpr_NN)
+fpr_RFC, tpr_RFC, _ = roc_curve(value_cv, y_score_RFC)
+roc_auc_RFC = auc(fpr_RFC, tpr_RFC)
+fpr_GDA_mod, tpr_GDA_mod, _ = roc_curve(value_cv, y_score_GDA_mod)
+roc_auc_GDA_mod = auc(fpr_GDA_mod, tpr_GDA_mod)
+
+# Plot
 
 plt.figure()
 lw = 2
-plt.plot(fpr, tpr, color='darkorange',
-         lw=lw, label='ROC curve (area = %0.2f)' % roc_auc)
-plt.plot([0, 1], [0, 1], color='navy', lw=lw, linestyle='--')
+plt.plot(fpr_GDA, tpr_GDA, color = 'darkorange', lw = lw, 
+         label = 'GDA (area = %0.2f)' % roc_auc_GDA)
+plt.plot(fpr_LRM, tpr_LRM, color = 'blue', lw = lw, 
+         label = 'LRM (area = %0.2f)' % roc_auc_LRM)
+plt.plot(fpr_NN, tpr_NN, color = 'red', lw = lw, 
+         label = 'NN (area = %0.2f)' % roc_auc_NN)
+plt.plot(fpr_RFC, tpr_RFC, color = 'darkgreen', lw = lw, 
+         label = 'RFC (area = %0.2f)' % roc_auc_RFC)
+plt.plot(fpr_GDA_mod, tpr_GDA_mod, color = 'purple', lw = lw, 
+         label = 'Quantile GDA (area = %0.2f)' % roc_auc_GDA_mod)
+plt.plot([0, 1], [0, 1], color='black', lw=lw, linestyle='--')
 plt.xlim([0.0, 1.0])
 plt.ylim([0.0, 1.05])
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('Receiver operating characteristic example')
 plt.legend(loc="lower right")
+plt.savefig("ROC.png", dpi = 1200)
 plt.show()
