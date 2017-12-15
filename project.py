@@ -499,7 +499,7 @@ Tests
 
 # NB
 
-bernoulli = True
+bernoulli = False
 
 if bernoulli:
     NB = BernoulliNB()
@@ -578,26 +578,19 @@ plt.plot(data_train[value_train == 0, 1], data_train[value_train == 0, 4], "r.")
 plt.plot(data_train[value_train == 1, 1], data_train[value_train == 1, 4], "b.")
 plt.show()
 
-## Guassian discriminant analysis
-
-GDA = GaussianDA(data_train[:, [1, 2]], value_train, "Linear")
-value_pred = GDA.predict(data_cv[:, [1, 2]])
-GDA_accuracy = np.mean(value_pred == value_cv)
-print("Gaussian Discriminant Analysis: {0:.2f}%".format(100*GDA_accuracy))
-
-LRM = Logistic_Regres(data_train[:, [0, 2, 3]], value_train)
-value_pred = LRM.predict(data_cv[:, [0, 2, 3]])
+LRM = Logistic_Regres(data_train[:, [1, 2]], value_train)
+value_pred = LRM.predict(data_cv[:, [1, 2]])
 accuracy = np.mean(value_pred == value_cv)
 print("Logistic Regression: {0:.2f}%".format(100*accuracy))
 
 NN = MLPClassifier(alpha = .005)
-NN.fit(data_train[:, [0, 2, 3]], value_train)
-value_pred = NN.predict(data_cv[:, [0, 2, 3]])
+NN.fit(data_train[:, [1, 2]], value_train)
+value_pred = NN.predict(data_cv[:, [1, 2]])
 accuracy = np.mean(value_pred == value_cv)
 print("Neural Nets: {0:.2f}%".format(100*accuracy))
 
-RFC = RFClassifier(data_train[:, [1, 2, 3]], value_train)
-value_pred = RFC.predict(data_cv[:, [1, 2, 3]])
+RFC = RFClassifier(data_train[:, [1, 2]], value_train)
+value_pred = RFC.predict(data_cv[:, [1, 2]])
 accuracy = np.mean(value_pred == value_cv)
 print("Random Forest Classifier with Cross Validation: {0:.2f}%".format(100*accuracy))
 
